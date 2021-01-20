@@ -10,12 +10,12 @@ model_plugin_t::model_plugin_t(uint32_t n_state_variables, uint32_t n_measuremen
     model_plugin_t::m_n_measurement_variables = n_measurement_variables;
 
     // Initialize process and measurement covariance matrices.
-    model_plugin_t::m_process_covariance.setIdentity(n_state_variables, n_state_variables);
-    model_plugin_t::m_measurement_covariance.setIdentity(n_measurement_variables, n_measurement_variables);
+    model_plugin_t::m_q.setIdentity(n_state_variables, n_state_variables);
+    model_plugin_t::m_r.setIdentity(n_measurement_variables, n_measurement_variables);
 
-    // Initialize measurement vectors.
-    model_plugin_t::m_measurement.setZero(n_measurement_variables);
-    model_plugin_t::m_measurement_availability.setZero(n_measurement_variables);
+    // Initialize measurement vector and mask.
+    model_plugin_t::m_z.setZero(n_measurement_variables);
+    model_plugin_t::m_m.setZero(n_measurement_variables, n_measurement_variables);
 }
 
 // PROPERTIES
@@ -28,56 +28,35 @@ uint32_t model_plugin_t::n_measurement_variables() const
     return model_plugin_t::m_n_measurement_variables;
 }
 
-
-// GET
-void model_plugin_t::get_process_covariance(Eigen::MatrixXd& q) const
+// ACCESS
+const Eigen::MatrixXd& model_plugin_t::q() const
 {
-    model_plugin_t::m_mutex_process_covariance.lock();
-    q = model_plugin_t::m_process_covariance;
-    model_plugin_t::m_mutex_process_covariance.unlock();
+    return model_plugin_t::m_q;
 }
-void model_plugin_t::get_measurement_covariance(Eigen::MatrixXd& r) const
+const Eigen::MatrixXd& model_plugin_t::r() const
 {
-    model_plugin_t::m_mutex_measurement_covariance.lock();
-    r = model_plugin_t::m_measurement_covariance;
-    model_plugin_t::m_mutex_measurement_covariance.unlock();
+    return model_plugin_t::m_r;
 }
-void model_plugin_t::get_measurements(Eigen::VectorXd& z, Eigen::VectorXd& availability) const
+const Eigen::VectorXd& model_plugin_t::z() const
 {
-    model_plugin_t::m_mutex_measurement.lock();
-    z = model_plugin_t::m_measurement;
-    availability = model_plugin_t::m_measurement_availability;
-    model_plugin_t::m_mutex_measurement.unlock();
+    return model_plugin_t::m_z;
+}
+const Eigen::MatrixXd& model_plugin_t::m() const
+{
+    return model_plugin_t::m_m;
 }
 
-// MEASUREMENTS
+// MEASUREMENT
 void model_plugin_t::new_measurement(uint32_t index, double value)
 {
-
+    // Store value in measurement vector.
+    model_plugin_t::m_z(index) = value;
+    // Update measurement mask matrix.
+    model_plugin_t::m_m(index, index) = 1.0;
 }
-
-// LOCKING
-void model_plugin_t::lock_process_covariance() const
+void model_plugin_t::clear_measurements()
 {
-    model_plugin_t::m_mutex_process_covariance.lock();
-}
-void model_plugin_t::unlock_process_covariance() const
-{
-    model_plugin_t::m_mutex_process_covariance.unlock();
-}
-void model_plugin_t::lock_measurement_covariance() const
-{
-    model_plugin_t::m_mutex_measurement_covariance.lock();
-}
-void model_plugin_t::unlock_measurement_covariance() const
-{
-    model_plugin_t::m_mutex_measurement_covariance.unlock();
-}
-void model_plugin_t::lock_measurement() const
-{
-    model_plugin_t::m_mutex_measurement.lock();
-}
-void model_plugin_t::unlock_measurement() const
-{
-    model_plugin_t::m_mutex_measurement.unlock();
+    // Reset measurement vector and mask to zero.
+    model_plugin_t::m_z.setZero();
+    model_plugin_t::m_m.setZero();
 }
