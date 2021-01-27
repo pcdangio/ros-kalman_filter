@@ -60,6 +60,10 @@ std::shared_ptr<model_plugin_t> model_plugin_t::load(const std::string& path)
         dlclose(so_handle);
         return nullptr;
     }
+
+    // Return the plugin as a shared ptr with a custom deleter.
+    return std::shared_ptr<model_plugin_t>(plugin,
+                                           [so_handle](model_plugin_t* plugin){delete plugin; dlclose(so_handle);});
 }
 
 // PROPERTIES
