@@ -21,7 +21,7 @@ model_plugin_t::model_plugin_t(uint32_t n_state_variables, uint32_t n_measuremen
     model_plugin_t::m_z.setZero(n_measurement_variables);
     model_plugin_t::m_m.setZero(n_measurement_variables, n_measurement_variables);
 }
-std::shared_ptr<model_plugin_t> model_plugin_t::load(const std::string& path)
+std::shared_ptr<model_plugin_t> model_plugin_t::load_base(const std::string& path)
 {
     // Check that path was provided (dl gets handle to program if empty)
     if(path.empty())
