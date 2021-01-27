@@ -1,5 +1,9 @@
 #include <kalman_filter/model_plugin.hpp>
 
+#include <ros/console.h>
+
+#include <dlfcn.h>
+
 using namespace kalman_filter;
 
 // CONSTRUCTORS
@@ -17,6 +21,46 @@ model_plugin_t::model_plugin_t(uint32_t n_state_variables, uint32_t n_measuremen
     model_plugin_t::m_z.setZero(n_measurement_variables);
     model_plugin_t::m_m.setZero(n_measurement_variables, n_measurement_variables);
 }
+std::shared_ptr<model_plugin_t> model_plugin_t::load(const std::string& path)
+{
+    // Check that path was provided (dl gets handle to program if empty)
+    if(path.empty())
+    {
+        ROS_ERROR("attempted to load model plugin with empty path");
+        return nullptr;
+    }
+
+    // Open plugin shared object library.
+    void* so_handle = dlopen(path.c_str(), RTLD_NOW);
+    if(!so_handle)
+    {
+        ROS_ERROR_STREAM("failed to load model plugin (" << dlerror() << ")");
+        return nullptr;
+    }
+
+    // Get a reference to the instantiate symbol.
+    typedef model_plugin_t* (*instantiate_t)();
+    instantiate_t instantiate = reinterpret_cast<instantiate_t>(dlsym(so_handle, "instantiate"));
+    if(!instantiate)
+    {
+        ROS_ERROR_STREAM("failed to load model plugin (" << dlerror() << ")");
+        dlclose(so_handle);
+        return nullptr;
+    }
+
+    // Try to instantiate the plugin.
+    model_plugin_t* plugin = nullptr;
+    try
+    {
+        plugin = instantiate();
+    }
+    catch(const std::exception& error)
+    {
+        ROS_ERROR_STREAM("failed to instantiate model plugin (" << error.what() << ")");
+        dlclose(so_handle);
+        return nullptr;
+    }
+}
 
 // PROPERTIES
 uint32_t model_plugin_t::n_state_variables() const
@@ -26,6 +70,13 @@ uint32_t model_plugin_t::n_state_variables() const
 uint32_t model_plugin_t::n_measurement_variables() const
 {
     return model_plugin_t::m_n_measurement_variables;
+}
+
+// METHODS
+void model_plugin_t::initialize_state(Eigen::VectorXd& state)
+{
+    // For base class, set initial state to zero.
+    state.setZero();
 }
 
 // ACCESS

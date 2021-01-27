@@ -16,8 +16,6 @@ public:
     virtual void predict_measurement(const Eigen::VectorXd& x, Eigen::VectorXd& z) const = 0;
 };
 
-#define REGISTER_MODEL_PLUGIN(class_name) extern "C" kalman_filter::ukf::model_plugin_t* create_model_plugin() {return new class_name();}
-
 }}
 
 #endif
