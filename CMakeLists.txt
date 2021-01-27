@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+find_package(Eigen3 REQUIRED)
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
@@ -103,7 +104,7 @@ catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_ukf
 #  CATKIN_DEPENDS roscpp
-#  DEPENDS system_lib
+  DEPENDS EIGEN3
 )
 
 ###########
@@ -115,13 +116,17 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 ## Declare a C++ library
 add_library(${PROJECT_NAME}_ukf
   src/kalman_filter/model_plugin.cpp
   src/kalman_filter/ukf/model_plugin.cpp
-)
+  src/kalman_filter/ukf/ukf.cpp)
+
+add_library(${PROJECT_NAME}_ukf_node
+  src/kalman_filter/ukf/node.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -147,6 +152,13 @@ add_library(${PROJECT_NAME}_ukf
 # target_link_libraries(${PROJECT_NAME}_node
 #   ${catkin_LIBRARIES}
 # )
+
+add_executable(${PROJECT_NAME}_ukf_node_executable src/kalman_filter/ukf/main.cpp)
+set_target_properties(${PROJECT_NAME}_ukf_node_executable PROPERTIES OUTPUT_NAME ukf PREFIX "")
+target_link_libraries(${PROJECT_NAME}_ukf_node_executable
+  ${PROJECT_NAME}_ukf_node
+  ${PROJECT_NAME}_ukf
+  ${catkin_LIBRARIES})
 
 #############
 ## Install ##
