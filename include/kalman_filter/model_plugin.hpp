@@ -10,6 +10,8 @@ namespace kalman_filter {
 class model_plugin_t
 {
 public:
+    static std::shared_ptr<model_plugin_t> load_base_model(const std::string& plugin_path);
+
     uint32_t n_state_variables() const;
     uint32_t n_measurement_variables() const;
 
@@ -24,7 +26,6 @@ public:
 
 protected:
     model_plugin_t(uint32_t n_state_variables, uint32_t n_measurement_variables);
-    static std::shared_ptr<model_plugin_t> load_base(const std::string& path);
 
     Eigen::MatrixXd m_q;
     Eigen::MatrixXd m_r;

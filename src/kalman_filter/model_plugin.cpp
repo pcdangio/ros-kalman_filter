@@ -21,17 +21,17 @@ model_plugin_t::model_plugin_t(uint32_t n_state_variables, uint32_t n_measuremen
     model_plugin_t::m_z.setZero(n_measurement_variables);
     model_plugin_t::m_m.setZero(n_measurement_variables, n_measurement_variables);
 }
-std::shared_ptr<model_plugin_t> model_plugin_t::load_base(const std::string& path)
+std::shared_ptr<model_plugin_t> model_plugin_t::load_base_model(const std::string& plugin_path)
 {
     // Check that path was provided (dl gets handle to program if empty)
-    if(path.empty())
+    if(plugin_path.empty())
     {
         ROS_ERROR("attempted to load model plugin with empty path");
         return nullptr;
     }
 
     // Open plugin shared object library.
-    void* so_handle = dlopen(path.c_str(), RTLD_NOW);
+    void* so_handle = dlopen(plugin_path.c_str(), RTLD_NOW);
     if(!so_handle)
     {
         ROS_ERROR_STREAM("failed to load model plugin (" << dlerror() << ")");
