@@ -10,17 +10,16 @@ class ukf_t
 {
 public:
     ukf_t(const std::string& model_plugin_path);
-    ~ukf_t();
+    ukf_t(const std::shared_ptr<ukf::model_plugin_t>& model_plugin);
 
-    void iterate();
+    void update();
     void reset();
 
     const Eigen::VectorXd& state_vector() const;
     uint64_t state_sequence() const;
 
 private:
-    ukf::model_plugin_t* m_model;
-    void* m_plugin_handle;
+    std::shared_ptr<ukf::model_plugin_t> m_model_plugin;
 
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
