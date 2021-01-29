@@ -153,9 +153,9 @@ add_library(${PROJECT_NAME}_ukf_node
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(${PROJECT_NAME}_ukf_node_executable src/kalman_filter/ukf/main.cpp)
-set_target_properties(${PROJECT_NAME}_ukf_node_executable PROPERTIES OUTPUT_NAME ukf PREFIX "")
-target_link_libraries(${PROJECT_NAME}_ukf_node_executable
+add_executable(${PROJECT_NAME}_ukf_exe src/kalman_filter/ukf/main.cpp)
+set_target_properties(${PROJECT_NAME}_ukf_exe PROPERTIES OUTPUT_NAME ukf PREFIX "")
+target_link_libraries(${PROJECT_NAME}_ukf_exe
   ${PROJECT_NAME}_ukf_node
   ${PROJECT_NAME}_ukf
   ${catkin_LIBRARIES})
