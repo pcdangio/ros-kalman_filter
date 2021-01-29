@@ -18,6 +18,10 @@ public:
     const Eigen::VectorXd& state_vector() const;
     uint64_t state_sequence() const;
 
+    // PARAMETERS
+    double p_alpha;
+    double p_kappa;
+
 private:
     std::shared_ptr<ukf::model_plugin_t> m_model_plugin;
 
@@ -40,6 +44,10 @@ private:
     Eigen::VectorXd v_xa;
     /// \brief The augmented covariance matrix.
     Eigen::MatrixXd m_Ea;
+    /// \brief The weight vector for weighted averaging.
+    Eigen::VectorXd v_w;
+    /// \brief The weight matrix for weighted averaging.
+    Eigen::MatrixXd m_w;
     /// \brief The sigma point variable matrix.
     Eigen::MatrixXd m_X;
     /// \brief The sigma point matrix for the predicted measurement.
@@ -52,13 +60,22 @@ private:
     Eigen::MatrixXd m_C;
     /// \brief The Kalman gain matrix.
     Eigen::MatrixXd m_K;
-    /// \brief A temporary vector of size n_variables.
-    Eigen::VectorXd t_x;
+    /// \brief An plugin interface vector for the prior state.
+    Eigen::VectorXd i_xp;
+    /// \brief A plugin interface vector for the predicted state.
+    Eigen::VectorXd i_x;
+    /// \brief A temporary vector of size n_variables * n_sigma.
+    Eigen::VectorXd t_ns;
     /// \brief A temporary vector of size n_measurements.
     Eigen::VectorXd t_z;
 
+    /// \brief An LLT object for storing results of Cholesky decompositions.
+    Eigen::LLT<Eigen::MatrixXd> m_llt;
+
     // SEQUENCE TRACKING
     uint64_t m_sequence;
+
+    void initialize();
 };
 
 }}
