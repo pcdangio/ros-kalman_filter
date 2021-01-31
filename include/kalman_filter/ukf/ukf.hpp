@@ -16,7 +16,7 @@ public:
     void reset();
 
     const Eigen::VectorXd& state_vector() const;
-    uint64_t state_sequence() const;
+    const uint64_t& state_sequence() const;
 
     // PARAMETERS
     double p_alpha;

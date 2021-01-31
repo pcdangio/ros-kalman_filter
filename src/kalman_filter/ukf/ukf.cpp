@@ -149,7 +149,7 @@ const Eigen::VectorXd& ukf_t::state_vector() const
 {
     return ukf_t::v_x;
 }
-uint64_t ukf_t::state_sequence() const
+const uint64_t& ukf_t::state_sequence() const
 {
     return ukf_t::m_sequence;
 }
