@@ -28,12 +28,8 @@ private:
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
     uint32_t n_variables;
-    /// \brief The number of variable measurements.
-    uint32_t n_measurements;
-    /// \brief The total size of the UKF's augmented state vector.
-    uint32_t n_augmented;
-    /// \brief The total number of sigma points used by the UKF.
-    uint32_t n_sigma;
+    uint32_t n_sigma_x;
+    uint32_t n_sigma_q;
 
     // // MODEL COMPONENTS
     // /// \brief A reference to the model's process noise matrix.
@@ -43,21 +39,22 @@ private:
     // std::function<void(const Eigen::VectorXd&, Eigen::VectorXd&)> f_state_transition;
     // std::function<void(const Eigen::VectorXd&, Eigen::VectorXd&)> f_measurement_update;
 
-    // RUNTIME MATRICES
+    // STORAGE: VARIABLE / PROCESS NOISE
     /// \brief The variable vector.
-    Eigen::VectorXd v_x;
+    Eigen::VectorXd x;
     /// \brief The variable covariance matrix.
-    Eigen::MatrixXd m_E;
-    /// \brief The augmented state vector.
-    Eigen::VectorXd v_xa;
-    /// \brief The augmented covariance matrix.
-    Eigen::MatrixXd m_Ea;
-    /// \brief The weight vector for weighted averaging.
-    Eigen::VectorXd v_w;
-    /// \brief The weight matrix for weighted averaging.
-    Eigen::MatrixXd m_w;
-    /// \brief The sigma point variable matrix.
-    Eigen::MatrixXd m_X;
+    Eigen::MatrixXd P;
+    /// \brief The mean recovery weight vector.
+    Eigen::VectorXd wm;
+    /// \brief The covariance recovery weight vector.
+    Eigen::VectorXd wc;
+    /// \brief The variable sigma matrix.
+    Eigen::MatrixXd Xx;
+    /// \brief The process noise sigma matrix.
+    Eigen::MatrixXd Xq;
+    /// \brief The evaluated variable sigma matrix.
+    Eigen::MatrixXd X;
+
     /// \brief The sigma point matrix for the predicted measurement.
     Eigen::MatrixXd m_Z;
     /// \brief The predicted measurement mean.
@@ -80,8 +77,6 @@ private:
     /// \brief An LLT object for storing results of Cholesky decompositions.
     Eigen::LLT<Eigen::MatrixXd> m_llt;
 
-    // SEQUENCE TRACKING
-    uint64_t m_sequence;
 
     void initialize();
 };

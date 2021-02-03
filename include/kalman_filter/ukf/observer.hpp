@@ -32,7 +32,7 @@ struct observer_t
     /// \brief The number of dimensions in each observation.
     const uint32_t dimensions;
     /// \brief The covariance of observeration noise.
-    Eigen::MatrixXd covariance;
+    Eigen::MatrixXd R;
 };
 
 }}
