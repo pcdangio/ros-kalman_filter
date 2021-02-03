@@ -1,7 +1,7 @@
 #ifndef KALMAN_FILTER___UKF___UKF_H
 #define KALMAN_FILTER___UKF___UKF_H
 
-#include <kalman_filter/ukf/model_plugin.hpp>
+#include <kalman_filter/ukf/model.hpp>
 
 namespace kalman_filter {
 namespace ukf {
@@ -9,21 +9,21 @@ namespace ukf {
 class ukf_t
 {
 public:
-    ukf_t(const std::string& model_plugin_path);
-    ukf_t(const std::shared_ptr<ukf::model_plugin_t>& model_plugin);
+    ukf_t(const std::shared_ptr<model_t>& model);
 
-    void update();
-    void reset();
+    void initialize(const Eigen::VectorXd& initial_state);
+
+    void predict();
+    void update(observer_id_t observer, const Eigen::VectorXd& z);
 
     const Eigen::VectorXd& state_vector() const;
-    const uint64_t& state_sequence() const;
 
     // PARAMETERS
     double p_alpha;
     double p_kappa;
 
 private:
-    std::shared_ptr<ukf::model_plugin_t> m_model_plugin;
+    std::shared_ptr<ukf::model_t> m_model;
 
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
@@ -34,6 +34,14 @@ private:
     uint32_t n_augmented;
     /// \brief The total number of sigma points used by the UKF.
     uint32_t n_sigma;
+
+    // // MODEL COMPONENTS
+    // /// \brief A reference to the model's process noise matrix.
+    // Eigen::MatrixXd& m_Q;
+    // /// \brief A reference to the model's measurement noise matrix.
+    // Eigen::MatrixXd& m_R;
+    // std::function<void(const Eigen::VectorXd&, Eigen::VectorXd&)> f_state_transition;
+    // std::function<void(const Eigen::VectorXd&, Eigen::VectorXd&)> f_measurement_update;
 
     // RUNTIME MATRICES
     /// \brief The variable vector.

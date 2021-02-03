@@ -120,13 +120,13 @@ include_directories(
 )
 
 ## Declare a C++ library
-add_library(${PROJECT_NAME}_ukf
-  src/kalman_filter/model_plugin.cpp
-  src/kalman_filter/ukf/model_plugin.cpp
-  src/kalman_filter/ukf/ukf.cpp)
+# add_library(${PROJECT_NAME}_ukf
+#   src/kalman_filter/model_plugin.cpp
+#   src/kalman_filter/ukf/model_plugin.cpp
+#   src/kalman_filter/ukf/ukf.cpp)
 
-add_library(${PROJECT_NAME}_ukf_node
-  src/kalman_filter/ukf/node.cpp)
+# add_library(${PROJECT_NAME}_ukf_node
+#   src/kalman_filter/ukf/node.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -156,8 +156,8 @@ add_library(${PROJECT_NAME}_ukf_node
 add_executable(${PROJECT_NAME}_ukf_exe src/kalman_filter/ukf/main.cpp)
 set_target_properties(${PROJECT_NAME}_ukf_exe PROPERTIES OUTPUT_NAME ukf PREFIX "")
 target_link_libraries(${PROJECT_NAME}_ukf_exe
-  ${PROJECT_NAME}_ukf_node
-  ${PROJECT_NAME}_ukf
+  # ${PROJECT_NAME}_ukf_node
+  # ${PROJECT_NAME}_ukf
   ${catkin_LIBRARIES})
 
 #############
