@@ -23,8 +23,9 @@ struct observer_t
     // METHODS
     /// \brief Calculates the observation for a given model state.
     /// \param x The state to calculate the observation for.
+    /// \param r The observation noise vector.
     /// \param z The calculated observation.
-    virtual void observation_model(const Eigen::VectorXd& x, Eigen::VectorXd& z) = 0;
+    virtual void observation_model(const Eigen::VectorXd& x, const Eigen::VectorXd& r, Eigen::VectorXd& z) = 0;
 
     // VARIABLES
     /// \brief The observer's unique ID.

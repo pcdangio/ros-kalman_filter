@@ -22,8 +22,9 @@ struct model_t
     // METHODS
     /// \brief Calculates a transition from one state to a new state.
     /// \param xp The current state to transition from.
+    /// \param q The process noise vector.
     /// \param x The calculated new state.
-    virtual void state_transition(const Eigen::VectorXd& xp, Eigen::VectorXd& x) = 0;
+    virtual void state_transition(const Eigen::VectorXd& xp, const Eigen::VectorXd& q, Eigen::VectorXd& x) = 0;
 
     // VARIABLES
     /// \brief The number of dimensions in the model's state.
