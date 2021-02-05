@@ -15,12 +15,12 @@ ukf_t::ukf_t(uint32_t dimensions, function_t prediction_function)
 
     // Store dimension sizes.
     ukf_t::n_variables = dimensions;
-    ukf_t::n_sigma_x = 2*ukf_t::n_variables + 1;
-    ukf_t::n_sigma_q = 2*ukf_t::n_variables + 1;
+    ukf_t::n_sigma_x = 2*ukf_t::n_variables;
+    ukf_t::n_sigma_q = 2*ukf_t::n_variables;
 
     // Allocate weight vectors.
-    ukf_t::wm.setZero(ukf_t::n_sigma_x + ukf_t::n_sigma_q);
-    ukf_t::wc.setZero(ukf_t::n_sigma_x + ukf_t::n_sigma_q);
+    ukf_t::wm.setZero(1 + ukf_t::n_sigma_x + ukf_t::n_sigma_q);
+    ukf_t::wc.setZero(1 + ukf_t::n_sigma_x + ukf_t::n_sigma_q);
 
     // Allocate variable components.
     ukf_t::x.setZero(ukf_t::n_variables);
@@ -28,7 +28,7 @@ ukf_t::ukf_t(uint32_t dimensions, function_t prediction_function)
     ukf_t::Q.setIdentity(ukf_t::n_variables, ukf_t::n_variables);
     ukf_t::Xx.setZero(ukf_t::n_variables, ukf_t::n_sigma_x);
     ukf_t::Xq.setZero(ukf_t::n_variables, ukf_t::n_sigma_q);
-    ukf_t::X.setZero(ukf_t::n_variables, ukf_t::n_sigma_x + ukf_t::n_sigma_q);
+    ukf_t::X.setZero(ukf_t::n_variables, 1 + ukf_t::n_sigma_x + ukf_t::n_sigma_q);
 
     // Allocate interface components.
     ukf_t::i_xp.setZero(ukf_t::n_variables);
@@ -50,16 +50,16 @@ void ukf_t::add_observer(observer_id_t id, uint32_t dimensions, function_t obser
 
     // Store dimension sizes.
     observer.n_observers = dimensions;
-    observer.n_sigma_z = 2*observer.n_observers + 1;
+    observer.n_sigma_z = 2*observer.n_observers;
 
     // Allocate weight vectors.
-    observer.wm.setZero(ukf_t::n_sigma_x + observer.n_sigma_z);
-    observer.wc.setZero(ukf_t::n_sigma_x + observer.n_sigma_z);
+    observer.wm.setZero(1 + ukf_t::n_sigma_x + observer.n_sigma_z);
+    observer.wc.setZero(1+ ukf_t::n_sigma_x + observer.n_sigma_z);
 
     // Allocate observer components.
     observer.R.setIdentity(observer.n_observers, observer.n_observers);
     observer.Xr.setZero(observer.n_observers, observer.n_sigma_z);
-    observer.Z.setZero(observer.n_observers, ukf_t::n_sigma_x + observer.n_sigma_z);
+    observer.Z.setZero(observer.n_observers, 1 + ukf_t::n_sigma_x + observer.n_sigma_z);
     observer.z.setZero(observer.n_observers);
     observer.S.setZero(observer.n_observers, observer.n_observers);
     observer.C.setZero(ukf_t::n_variables, observer.n_observers);
