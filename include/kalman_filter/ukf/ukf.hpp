@@ -18,6 +18,7 @@ public:
     // CONSTRUCTORS
     ukf_t(uint32_t dimensions, function_t prediction_function);
 
+    // OBSERVER MANAGEMENT
     void add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function);
     void remove_observer(observer_id_t id);
 
@@ -27,6 +28,7 @@ public:
     void update(observer_id_t id, const Eigen::VectorXd& z);
 
     const Eigen::VectorXd& state() const;
+    const Eigen::MatrixXd& covariance() const;
 
     // COVARIANCES
     /// \brief The process noise covariance matrix.
@@ -43,11 +45,11 @@ private:
     
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
-    uint32_t n_variables;
+    uint32_t n_x;
+    /// \brief The number of elements in the augmented X state.
+    uint32_t n_xa;
     /// \brief The number of X sigma points.
-    uint32_t n_sigma_x;
-    /// \brief The number of Q sigma points.
-    uint32_t n_sigma_q;
+    uint32_t n_X;
 
     // WEIGHTS
     /// \brief The mean recovery weight vector.
@@ -61,9 +63,9 @@ private:
     /// \brief The variable covariance matrix.
     Eigen::MatrixXd P;
     
-    /// \brief The variable sigma matrix.
-    Eigen::MatrixXd Xx;
-    /// \brief The process noise sigma matrix.
+    /// \brief The variable covariance sigma matrix (positive half).
+    Eigen::MatrixXd Xp;
+    /// \brief The process noise sigma matrix (positive half).
     Eigen::MatrixXd Xq;
     /// \brief The evaluated variable sigma matrix.
     Eigen::MatrixXd X;
@@ -72,15 +74,16 @@ private:
     {
         function_t h;
 
-        uint32_t n_observers;
-        uint32_t n_sigma_z;
+        uint32_t n_z;
+        uint32_t n_za;
+        uint32_t n_Z;
 
         Eigen::VectorXd wm;
         Eigen::VectorXd wc;
 
         /// \brief The observation noise covariance matrix.
         Eigen::MatrixXd R;
-        /// \brief The observation noise sigma matrix.
+        /// \brief The observation noise sigma matrix (positive half).
         Eigen::MatrixXd Xr;
         /// \brief The evaluated observation sigma matrix.
         Eigen::MatrixXd Z;
@@ -107,6 +110,10 @@ private:
     Eigen::VectorXd i_q;
     /// \brief An interface to the current state vector.
     Eigen::VectorXd i_x;
+
+    // STORAGE: TEMPORARIES
+    Eigen::MatrixXd t_x;
+    Eigen::MatrixXd t_xx;
 
     /// \brief An LLT object for storing results of Cholesky decompositions.
     Eigen::LLT<Eigen::MatrixXd> llt;
