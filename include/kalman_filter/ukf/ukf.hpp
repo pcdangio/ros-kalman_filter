@@ -25,7 +25,7 @@ public:
     void initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);    
 
     void predict();
-    void update(observer_id_t id, const Eigen::VectorXd& z);
+    void update(observer_id_t observer_id, const Eigen::VectorXd& z);
 
     const Eigen::VectorXd& state() const;
     const Eigen::MatrixXd& covariance() const;
@@ -33,7 +33,7 @@ public:
     // COVARIANCES
     /// \brief The process noise covariance matrix.
     Eigen::MatrixXd Q;
-    Eigen::MatrixXd& R(observer_id_t id);
+    Eigen::MatrixXd& R(observer_id_t observer_id);
 
     // PARAMETERS
     double_t alpha;
@@ -100,6 +100,10 @@ private:
         Eigen::VectorXd i_r;
         /// \brief An interface to the predicted observation vector.
         Eigen::VectorXd i_z;
+
+        Eigen::VectorXd t_z;
+        Eigen::MatrixXd t_zz;
+        Eigen::MatrixXd t_xz;
     };
     std::unordered_map<observer_id_t, observer_t> observers;
 
@@ -112,7 +116,7 @@ private:
     Eigen::VectorXd i_x;
 
     // STORAGE: TEMPORARIES
-    Eigen::MatrixXd t_x;
+    Eigen::VectorXd t_x;
     Eigen::MatrixXd t_xx;
 
     /// \brief An LLT object for storing results of Cholesky decompositions.
