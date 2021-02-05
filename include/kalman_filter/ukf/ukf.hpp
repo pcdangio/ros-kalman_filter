@@ -1,53 +1,66 @@
 #ifndef KALMAN_FILTER___UKF___UKF_H
 #define KALMAN_FILTER___UKF___UKF_H
 
-#include <kalman_filter/ukf/model.hpp>
+#include <eigen3/Eigen/Dense>
+
+#include <functional>
+#include <unordered_map>
 
 namespace kalman_filter {
 namespace ukf {
 
+typedef uint32_t observer_id_t;
+typedef std::function<void(const Eigen::VectorXd&, const Eigen::VectorXd&, Eigen::VectorXd&)> function_t;
+
 class ukf_t
 {
 public:
-    ukf_t(const std::shared_ptr<model_t>& model);
+    // CONSTRUCTORS
+    ukf_t(uint32_t dimensions, function_t prediction_function);
 
-    void initialize(const Eigen::VectorXd& initial_state);
+    bool add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function);
+    bool remove_observer(observer_id_t id);
+
+    void initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);    
 
     void predict();
-    void update(observer_id_t observer, const Eigen::VectorXd& z);
+    void update(observer_id_t id, const Eigen::VectorXd& z);
 
-    const Eigen::VectorXd& state_vector() const;
+    const Eigen::VectorXd& state() const;
+
+    // COVARIANCES
+    /// \brief The process noise covariance matrix.
+    Eigen::MatrixXd Q;
+    Eigen::MatrixXd* R(observer_id_t id);
 
     // PARAMETERS
-    double p_alpha;
-    double p_kappa;
+    double_t alpha;
+    double_t kappa;
+    double_t beta;
 
 private:
-    std::shared_ptr<ukf::model_t> m_model;
-
+    function_t f;
+    
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
     uint32_t n_variables;
+    /// \brief The number of X sigma points.
     uint32_t n_sigma_x;
+    /// \brief The number of Q sigma points.
     uint32_t n_sigma_q;
 
-    // // MODEL COMPONENTS
-    // /// \brief A reference to the model's process noise matrix.
-    // Eigen::MatrixXd& m_Q;
-    // /// \brief A reference to the model's measurement noise matrix.
-    // Eigen::MatrixXd& m_R;
-    // std::function<void(const Eigen::VectorXd&, Eigen::VectorXd&)> f_state_transition;
-    // std::function<void(const Eigen::VectorXd&, Eigen::VectorXd&)> f_measurement_update;
+    // WEIGHTS
+    /// \brief The mean recovery weight vector.
+    Eigen::VectorXd wm;
+    /// \brief The covariance recovery weight vector.
+    Eigen::VectorXd wc;
 
     // STORAGE: VARIABLE / PROCESS NOISE
     /// \brief The variable vector.
     Eigen::VectorXd x;
     /// \brief The variable covariance matrix.
     Eigen::MatrixXd P;
-    /// \brief The mean recovery weight vector.
-    Eigen::VectorXd wm;
-    /// \brief The covariance recovery weight vector.
-    Eigen::VectorXd wc;
+    
     /// \brief The variable sigma matrix.
     Eigen::MatrixXd Xx;
     /// \brief The process noise sigma matrix.
@@ -55,30 +68,48 @@ private:
     /// \brief The evaluated variable sigma matrix.
     Eigen::MatrixXd X;
 
-    /// \brief The sigma point matrix for the predicted measurement.
-    Eigen::MatrixXd m_Z;
-    /// \brief The predicted measurement mean.
-    Eigen::VectorXd v_z;
-    /// \brief The predicted measurement covariance.
-    Eigen::MatrixXd m_S;
-    /// \brief The predicted cross covariance.
-    Eigen::MatrixXd m_C;
-    /// \brief The Kalman gain matrix.
-    Eigen::MatrixXd m_K;
-    /// \brief An plugin interface vector for the prior state.
+    struct observer_t
+    {
+        function_t h;
+
+        uint32_t n_observers;
+        uint32_t n_sigma_z;
+
+        Eigen::VectorXd wm;
+        Eigen::VectorXd wc;
+
+        /// \brief The observation noise covariance matrix.
+        Eigen::MatrixXd R;
+        /// \brief The observation noise sigma matrix.
+        Eigen::MatrixXd Xr;
+        /// \brief The evaluated observation sigma matrix.
+        Eigen::MatrixXd Z;
+        /// \brief The predicted observation vector.
+        Eigen::VectorXd z;
+        /// \brief The predicted observation covariance.
+        Eigen::MatrixXd S;
+        /// \brief The innovation cross covariance.
+        Eigen::MatrixXd C;
+        /// \brief The Kalman gain.
+        Eigen::MatrixXd K;
+
+        /// \brief An interface to the observation noise vector.
+        Eigen::VectorXd i_r;
+        /// \brief An interface to the predicted observation vector.
+        Eigen::VectorXd i_z;
+    };
+    std::unordered_map<observer_id_t, observer_t> observers;
+
+    // STORAGE: INTERFACES
+    /// \brief An interface to the prior state vector.
     Eigen::VectorXd i_xp;
-    /// \brief A plugin interface vector for the predicted state.
+    /// \brief An interface to the process noise vector.
+    Eigen::VectorXd i_q;
+    /// \brief An interface to the current state vector.
     Eigen::VectorXd i_x;
-    /// \brief A temporary vector of size n_variables * n_sigma.
-    Eigen::VectorXd t_ns;
-    /// \brief A temporary vector of size n_measurements.
-    Eigen::VectorXd t_z;
 
     /// \brief An LLT object for storing results of Cholesky decompositions.
-    Eigen::LLT<Eigen::MatrixXd> m_llt;
-
-
-    void initialize();
+    Eigen::LLT<Eigen::MatrixXd> llt;
 };
 
 }}

@@ -153,7 +153,9 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
-add_executable(${PROJECT_NAME}_ukf_exe src/kalman_filter/ukf/main.cpp)
+add_executable(${PROJECT_NAME}_ukf_exe
+  src/kalman_filter/ukf/main.cpp
+  src/kalman_filter/ukf/ukf.cpp)
 set_target_properties(${PROJECT_NAME}_ukf_exe PROPERTIES OUTPUT_NAME ukf PREFIX "")
 target_link_libraries(${PROJECT_NAME}_ukf_exe
   # ${PROJECT_NAME}_ukf_node

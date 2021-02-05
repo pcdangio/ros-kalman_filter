@@ -1,29 +1,29 @@
-//#include <kalman_filter/ukf/node.hpp>
+#include <kalman_filter/ukf/ukf.hpp>
 
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 
+void transition_function(const Eigen::VectorXd& xp, const Eigen::VectorXd& q, Eigen::VectorXd& x)
+{
+
+}
+void h0(const Eigen::VectorXd& x, const Eigen::VectorXd& r, Eigen::VectorXd& z)
+{
+
+}
+
 int32_t main(int32_t argc, char** argv)
 {
-    Eigen::MatrixXd m;
-    m.setZero(4,4);
-    m(0,0) = 2;
-    m(0,1) = 1;
-    m(1,0) = 1;
-    m(1,1) = 2;
-    m(2,2) = 3;
-    m(2,3) = 2;
-    m(3,2) = 2;
-    m(3,3) = 3;
+    kalman_filter::ukf::ukf_t ukf(3, transition_function);
 
-    std::cout << m << std::endl;
+    ukf.add_observer(0, 2, h0);
+    ukf.remove_observer(0);
 
-    Eigen::LLT<Eigen::MatrixXd> m_llt;
-    m_llt.compute(m);
-
-    Eigen::MatrixXd lower = m_llt.matrixL();
-
-    std::cout << lower << std::endl;
+    Eigen::VectorXd x_o;
+    x_o.setZero(3);
+    Eigen::MatrixXd P_o;
+    P_o.setIdentity(3,3);
+    ukf.initialize(x_o, P_o);
 
     // // Initialize ROS.
     // ros::init(argc, argv, "ukf");

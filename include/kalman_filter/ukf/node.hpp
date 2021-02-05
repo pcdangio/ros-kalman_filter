@@ -1,8 +1,6 @@
 #ifndef KALMAN_FILTER___UKF___NODE_H
 #define KALMAN_FILTER___UKF___NODE_H
 
-#include <kalman_filter/ukf/model_plugin.hpp>
-
 #include <ros/ros.h>
 
 namespace kalman_filter {
