@@ -18,8 +18,8 @@ public:
     // CONSTRUCTORS
     ukf_t(uint32_t dimensions, function_t prediction_function);
 
-    bool add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function);
-    bool remove_observer(observer_id_t id);
+    void add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function);
+    void remove_observer(observer_id_t id);
 
     void initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);    
 
@@ -31,7 +31,7 @@ public:
     // COVARIANCES
     /// \brief The process noise covariance matrix.
     Eigen::MatrixXd Q;
-    Eigen::MatrixXd* R(observer_id_t id);
+    Eigen::MatrixXd& R(observer_id_t id);
 
     // PARAMETERS
     double_t alpha;

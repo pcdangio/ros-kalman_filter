@@ -1,7 +1,5 @@
 #include <kalman_filter/ukf/ukf.hpp>
 
-#include <ros/console.h>
-
 using namespace kalman_filter::ukf;
 
 // CONSTRUCTORS
@@ -42,16 +40,9 @@ ukf_t::ukf_t(uint32_t dimensions, function_t prediction_function)
 }
 
 // INITIALIZATION
-bool ukf_t::add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function)
+void ukf_t::add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function)
 {
-    // Check if observer already exists.
-    if(ukf_t::observers.count(id))
-    {
-        ROS_ERROR_STREAM("failed to add observer (observer with id [" << id << "] already exists)");
-        return false;
-    }
-
-    // Create a new observer and grab a reference to it.
+    // Create a new observer and grab a reference to it (or grab existing observer to replace it)
     observer_t& observer = ukf_t::observers[id];
 
     // Store observer's function.
@@ -77,51 +68,29 @@ bool ukf_t::add_observer(observer_id_t id, uint32_t dimensions, function_t obser
     // Allocate interface components.
     observer.i_r.setZero(observer.n_observers);
     observer.i_z.setZero(observer.n_observers);
-
-    // Log addition of observer.
-    ROS_INFO_STREAM("added observer [" << id << "] with [" << dimensions << "] dimensional observation vector");
-
-    return true;
 }
-bool ukf_t::remove_observer(observer_id_t id)
+void ukf_t::remove_observer(observer_id_t id)
 {
-    // Check if observer exists.
-    if(ukf_t::observers.count(id) == 0)
-    {
-        ROS_ERROR_STREAM("failed to remove observer (observer with id [" << id << "] does not exist)");
-        return false;
-    }
-
     // Remove observer.
-    ukf_t::observers.erase(id);
-
-    // Log removal.
-    ROS_INFO_STREAM("removed observer [" << id << "]");
-
-    return true;
+    ukf_t::observers.erase(id)
 }
 void ukf_t::initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance)
 {
     // Verify initial state size.
     if(initial_state.size() != ukf_t::n_variables)
     {
-        ROS_ERROR("failed to initialize state vector (initial state provided has incorrect size)");
-        return;
+        throw std::runtime_error("failed to initialize state vector (initial state provided has incorrect size)");
     }
 
     // Verify initial covariance size.
     if(initial_covariance.rows() != ukf_t::n_variables || initial_covariance.cols() != ukf_t::n_variables)
     {
-        ROS_ERROR("failed to initialize state covariance (initial covariance provided has incorrect size)");
-        return;
+        throw std::runtime_error("failed to initialize state covariance (initial covariance provided has incorrect size)");
     }
 
     // Copy initial state and covariance.
     ukf_t::x = initial_state;
     ukf_t::P = initial_covariance;
-
-    // Log initialization.
-    ROS_INFO_STREAM("state vector and covariance initialized");
 }
 
 void ukf_t::predict()
