@@ -126,7 +126,7 @@ void ukf_t::predict()
 
     // Populate Xp and Xq input sigma matrices.
     
-    // Calculate square root of P using Cholseky Decomposition.
+    // Calculate square root of P using Cholseky Decomposition
     ukf_t::llt.compute(ukf_t::P);
     // Fill +sqrt(P) block of Xp.
     ukf_t::Xp = ukf_t::llt.matrixL();
@@ -380,6 +380,18 @@ void ukf_t::update(observer_id_t observer_id, const Eigen::VectorXd& z)
         // Sum into cross covariance.
         observer.C += observer.t_xz;
     }
+
+    // Calculate Kalman gain.
+    observer.t_zz = observer.S.inverse();
+    observer.K.noalias() = observer.C * observer.t_zz;
+
+    // Update state.
+    observer.t_z = z - observer.z;
+    ukf_t::x.noalias() += observer.K * observer.t_z;
+
+    // Update covariance.
+    observer.t_xz.noalias() = observer.K * observer.S;
+    ukf_t::P.noalias() -= observer.t_xz * observer.K.transpose();
 }
 
 // ACCESS
