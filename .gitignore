@@ -1,2 +1,5 @@
 # Ignore IDE files.
 .vscode/
+
+# Ignore documentation.
+doc/
