@@ -1,15 +1,15 @@
-/// \file kalman_filter/ukf/ukf.hpp
-/// \brief Defines the kalman_filter::ukf::ukf_t class.
-#ifndef KALMAN_FILTER___UKF___UKF_H
-#define KALMAN_FILTER___UKF___UKF_H
+/// \file kalman_filter/ukf.hpp
+/// \brief Defines the kalman_filter::ukf_t class.
+#ifndef KALMAN_FILTER___UKF_H
+#define KALMAN_FILTER___UKF_H
 
 #include <eigen3/Eigen/Dense>
 
 #include <functional>
 #include <unordered_map>
 
+/// \brief Includes objects for Kalman Filtering.
 namespace kalman_filter {
-namespace ukf {
 
 // TYPE DEFINITIONS
 /// \brief A unique ID number for an observer.
@@ -179,6 +179,6 @@ private:
     std::unordered_map<observer_id_t, observer_t> observers;
 };
 
-}}
+}
 
 #endif

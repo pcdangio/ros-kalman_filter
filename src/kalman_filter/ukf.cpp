@@ -1,6 +1,6 @@
-#include <kalman_filter/ukf/ukf.hpp>
+#include <kalman_filter/ukf.hpp>
 
-using namespace kalman_filter::ukf;
+using namespace kalman_filter;
 
 // CONSTRUCTORS
 ukf_t::ukf_t(uint32_t dimensions, function_t prediction_function)
