@@ -37,6 +37,8 @@ public:
     /// \brief Removes an observer from the UKF.
     /// \param id The unique ID of the observer to remove.
     void remove_observer(observer_id_t id);
+    /// \brief Removes all observers from the UKF.
+    void clear_observers();
 
     // FILTER METHODS
     /// \brief Initializes the UKF with a specified state and covariance.
@@ -51,6 +53,9 @@ public:
     void update(observer_id_t observer_id, const Eigen::VectorXd& z);
 
     // ACCESS
+    /// \brief Gets the number of variables in the state vector.
+    /// \returns The number of variables.
+    uint32_t n_variables() const;
     /// \brief Gets the current state vector.
     /// \returns A const reference to the current state vector.
     const Eigen::VectorXd& state() const;

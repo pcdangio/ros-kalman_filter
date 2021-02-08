@@ -81,6 +81,10 @@ void ukf_t::remove_observer(observer_id_t id)
     // Remove observer.
     ukf_t::observers.erase(id);
 }
+void ukf_t::clear_observers()
+{
+    ukf_t::observers.clear();
+}
 
 // FILTER METHODS
 void ukf_t::initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance)
@@ -408,6 +412,10 @@ Eigen::MatrixXd& ukf_t::R(observer_id_t observer_id)
 
     // Return reference to observer's R.
     return observer_entry->second.R;
+}
+uint32_t ukf_t::n_variables() const
+{
+    return ukf_t::n_x;
 }
 const Eigen::VectorXd& ukf_t::state() const
 {
