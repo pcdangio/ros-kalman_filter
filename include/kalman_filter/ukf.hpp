@@ -44,7 +44,7 @@ public:
     /// \brief Initializes the UKF with a specified state and covariance.
     /// \param initial_state The initial state vector to initialize with.
     /// \param initial_covariance The initial state covariance to initialize with.
-    void initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);    
+    void initialize_state(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);    
     /// \brief Predicts a new state from the current state.
     void predict();
     /// \brief Updates the current state with an observation.

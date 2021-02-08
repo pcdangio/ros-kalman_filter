@@ -87,7 +87,7 @@ void ukf_t::clear_observers()
 }
 
 // FILTER METHODS
-void ukf_t::initialize(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance)
+void ukf_t::initialize_state(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance)
 {
     // Verify initial state size.
     if(initial_state.size() != ukf_t::n_x)
