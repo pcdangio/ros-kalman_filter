@@ -3,21 +3,21 @@
 using namespace kalman_filter;
 
 // CONSTRUCTORS
-ukf_t::ukf_t(uint32_t dimensions, function_t prediction_function)
+ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
 {
-    // Store prediction function.
-    ukf_t::f = prediction_function;
-
     // Store dimension sizes.
-    ukf_t::n_x = dimensions;
+    ukf_t::n_x = n_variables;
     ukf_t::n_xa = 2*ukf_t::n_x;
     ukf_t::n_X = 1 + 2*ukf_t::n_xa;
+    ukf_t::n_z = n_observers;
+    ukf_t::n_za = ukf_t::n_x + ukf_t::n_z;
+    ukf_t::n_Z = 1 + 2*ukf_t::n_za;
 
     // Allocate weight vectors.
     ukf_t::wm.setZero(ukf_t::n_X);
     ukf_t::wc.setZero(ukf_t::n_X);
 
-    // Allocate variable components.
+    // Allocate prediction components.
     ukf_t::x.setZero(ukf_t::n_x);
     ukf_t::P.setIdentity(ukf_t::n_x, ukf_t::n_x);
     ukf_t::Q.setIdentity(ukf_t::n_x, ukf_t::n_x);
@@ -25,65 +25,32 @@ ukf_t::ukf_t(uint32_t dimensions, function_t prediction_function)
     ukf_t::Xq.setZero(ukf_t::n_x, ukf_t::n_x);
     ukf_t::X.setZero(ukf_t::n_x, ukf_t::n_X);
 
+    // Allocate update components.
+    ukf_t::R.setIdentity(ukf_t::n_z, ukf_t::n_z);
+    ukf_t::Xr.setZero(ukf_t::n_z, ukf_t::n_z);
+    ukf_t::Z.setZero(ukf_t::n_z, ukf_t::n_Z);
+    ukf_t::z.setZero(ukf_t::n_z);
+    ukf_t::S.setZero(ukf_t::n_z, ukf_t::n_z);
+    ukf_t::C.setZero(ukf_t::n_x, ukf_t::n_z);
+
     // Allocate interface components.
     ukf_t::i_xp.setZero(ukf_t::n_x);
     ukf_t::i_x.setZero(ukf_t::n_x);
     ukf_t::i_q.setZero(ukf_t::n_x);
+    ukf_t::i_r.setZero(ukf_t::n_z);
+    ukf_t::i_z.setZero(ukf_t::n_z);
 
     // Allocate temporaries.
     ukf_t::t_x.setZero(ukf_t::n_x);
     ukf_t::t_xx.setZero(ukf_t::n_x, ukf_t::n_x);
+    ukf_t::t_z.setZero(ukf_t::n_z);
+    ukf_t::t_zz.setZero(ukf_t::n_z, ukf_t::n_z);
+    ukf_t::t_xz.setZero(ukf_t::n_x, ukf_t::n_z);
 
     // Set default parameters.
     ukf_t::alpha = 0.001;
     ukf_t::kappa = 3 - ukf_t::n_x;
     ukf_t::beta = 2;
-}
-
-// OBSERVER MANAGEMENT
-void ukf_t::add_observer(observer_id_t id, uint32_t dimensions, function_t observation_function)
-{
-    // Create a new observer and grab a reference to it (or grab existing observer to replace it)
-    observer_t& observer = ukf_t::observers[id];
-
-    // Store observer's function.
-    observer.h = observation_function;
-
-    // Store dimension sizes.
-    observer.n_z = dimensions;
-    observer.n_za = ukf_t::n_x + observer.n_z;
-    observer.n_Z = 1 + 2*observer.n_za;
-
-    // Allocate weight vectors.
-    observer.wm.setZero(observer.n_Z);
-    observer.wc.setZero(observer.n_Z);
-
-    // Allocate observer components.
-    observer.R.setIdentity(observer.n_z, observer.n_z);
-    observer.Xr.setZero(observer.n_z, observer.n_z);
-    observer.Z.setZero(observer.n_z, observer.n_Z);
-    observer.z.setZero(observer.n_z);
-    observer.S.setZero(observer.n_z, observer.n_z);
-    observer.C.setZero(ukf_t::n_x, observer.n_z);
-    observer.K.setZero(ukf_t::n_x, observer.n_z);
-
-    // Allocate interface components.
-    observer.i_r.setZero(observer.n_z);
-    observer.i_z.setZero(observer.n_z);
-
-    // Allocate temporaries.
-    observer.t_z.setZero(observer.n_z);
-    observer.t_zz.setZero(observer.n_z, observer.n_z);
-    observer.t_xz.setZero(ukf_t::n_x, observer.n_z);
-}
-void ukf_t::remove_observer(observer_id_t id)
-{
-    // Remove observer.
-    ukf_t::observers.erase(id);
-}
-void ukf_t::clear_observers()
-{
-    ukf_t::observers.clear();
 }
 
 // FILTER METHODS
@@ -105,18 +72,12 @@ void ukf_t::initialize_state(const Eigen::VectorXd& initial_state, const Eigen::
     ukf_t::x = initial_state;
     ukf_t::P = initial_covariance;
 }
-void ukf_t::predict()
+void ukf_t::iterate()
 {
-    // Calculate lambda for this iteration (user can change parameters between iterations)
-    double lambda = ukf_t::alpha * ukf_t::alpha * (static_cast<double>(ukf_t::n_xa) + ukf_t::kappa) - static_cast<double>(ukf_t::n_xa);
-
-    // Calculate weight vectors for mean and covariance averaging.
-    // Set mean recovery weight vector.
-    ukf_t::wm.fill(1.0 / (2.0 * (static_cast<double>(ukf_t::n_xa) + lambda)));
-    ukf_t::wm(0) *= 2.0 * lambda;
-    // Copy wc from wm and update first element.
-    ukf_t::wc = ukf_t::wm;
-    ukf_t::wc(0) += (1.0 - ukf_t::alpha*ukf_t::alpha + ukf_t::beta);
+    // Calculate lambda and set wm/wc for both the X and Z sigma matrices.
+    double lambda_X, lambda_Z;
+    ukf_t::calculate_scaling(ukf_t::n_xa, lambda_X, ukf_t::wm_X, ukf_t::wc_X);
+    ukf_t::calculate_scaling(ukf_t::n_za, lambda_Z, ukf_t::wm_Z, ukf_t::wc_Z);
 
     // Set up input sigma matrices.
     // NOTE: This implementation segments out the input sigma matrix for efficiency:
@@ -126,25 +87,12 @@ void ukf_t::predict()
     // u is stored in x
     // y*sqrt(P) stored in Xp
     // y*sqrt(Q) stored in Xq
-    // y*sqrt(R) not set in predict as not used.
+    // y*sqrt(R) stored in Xr.
+    ukf_t::populate_sigma_component(ukf_t::n_xa, lambda_X, ukf_t::P, ukf_t::Xp);
+    ukf_t::populate_sigma_component(ukf_t::n_xa, lambda_X, ukf_t::Q, ukf_t::Xq);
+    ukf_t::populate_sigma_component(ukf_t::n_za, lambda_Z, ukf_t::R, ukf_t::Xr);
 
-    // Populate Xp and Xq input sigma matrices.
-    
-    // Calculate square root of P using Cholseky Decomposition
-    ukf_t::llt.compute(ukf_t::P);
-    // Fill +sqrt(P) block of Xp.
-    ukf_t::Xp = ukf_t::llt.matrixL();
-    // Apply sqrt(n+lambda) to entire matrix.
-    ukf_t::Xp *= std::sqrt(static_cast<double>(ukf_t::n_xa) + lambda);
-
-    // Calculate square root of Q using Cholseky Decomposition.
-    ukf_t::llt.compute(ukf_t::Q);
-    // Fill +sqrt(Q) block of Xq.
-    ukf_t::Xq = ukf_t::llt.matrixL();
-    // Apply sqrt(n+lambda) to entire matrix.
-    ukf_t::Xq *= std::sqrt(static_cast<double>(ukf_t::n_xa) + lambda);
-
-    // Evaluate sigma points through transition function.
+    // Evaluate X sigma points through transition function.
 
     // Pass first set of sigma points, which is just the mean.
     // Populate interface vectors.
@@ -152,7 +100,7 @@ void ukf_t::predict()
     ukf_t::i_q.setZero(ukf_t::n_x);
     ukf_t::i_x.setZero(ukf_t::n_x);
     // Run transition function.
-    ukf_t::f(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
+    ukf_t::state_transition(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
     // Capture output into X.
     ukf_t::X.col(0) = ukf_t::i_x;
 
@@ -165,7 +113,7 @@ void ukf_t::predict()
         ukf_t::i_q.setZero(ukf_t::n_x);
         ukf_t::i_x.setZero(ukf_t::n_x);
         // Run transition function.
-        ukf_t::f(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
+        ukf_t::state_transition(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
         // Capture output into X.
         ukf_t::X.col(1 + j) = ukf_t::i_x;
         
@@ -175,7 +123,7 @@ void ukf_t::predict()
         ukf_t::i_q.setZero(ukf_t::n_x);
         ukf_t::i_x.setZero(ukf_t::n_x);
         // Run transition function.
-        ukf_t::f(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
+        ukf_t::state_transition(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
         // Capture output into X.
         ukf_t::X.col(1 + ukf_t::n_x + j) = ukf_t::i_x;
     }
@@ -203,6 +151,42 @@ void ukf_t::predict()
         // Capture output into X.
         ukf_t::X.col(1 + 3*ukf_t::n_x + j) = ukf_t::i_x;
     }
+}
+void ukf_t::calculate_scaling(uint32_t n_a, double_t& lambda, Eigen::VectorXd& wm, Eigen::VectorXd& wc) const
+{
+    // Calculate lambda for this iteration (user can change parameters between iterations)
+    lambda = ukf_t::alpha * ukf_t::alpha * (static_cast<double>(n_a) + ukf_t::kappa) - static_cast<double>(n_a);
+
+    // Calculate weight vectors for mean and covariance averaging.
+    // Set mean recovery weight vector.
+    wm.fill(1.0 / (2.0 * (static_cast<double>(n_a) + lambda)));
+    wm(0) *= 2.0 * lambda;
+    // Copy wc from wm and update first element.
+    wc = wm;
+    wc(0) += (1.0 - ukf_t::alpha*ukf_t::alpha + ukf_t::beta);
+}
+void ukf_t::populate_sigma_component(uint32_t n_a, double_t lambda, const Eigen::MatrixXd& covariance, Eigen::MatrixXd& sigma_component) const
+{
+    // Calculate square root of the covariance matrix using Cholseky Decomposition
+    ukf_t::llt.compute(covariance);
+    // Fill +sqrt(C) block of X.
+    sigma_component = ukf_t::llt.matrixL();
+    // Apply sqrt(n+lambda) to entire matrix.
+    sigma_component *= std::sqrt(static_cast<double>(n_a) + lambda);
+}
+void ukf_t::predict()
+{
+    
+
+    
+
+    
+
+    // Populate Xp and Xq input sigma matrices.
+    
+    
+
+    
 
     // Calculate predicted state mean and covariance.
     
@@ -226,21 +210,7 @@ void ukf_t::predict()
 }
 void ukf_t::update(observer_id_t observer_id, const Eigen::VectorXd& z)
 {
-    // Get the observer by ID.
-    auto entry = ukf_t::observers.find(observer_id);
-    // Check if the observer was found.
-    if(entry == ukf_t::observers.end())
-    {
-        throw std::runtime_error("observer with specified id does not exist");
-    }
-    // Store reference to observer.
-    observer_t& observer = entry->second;
 
-    // Verify that observation vector size matches.
-    if(z.size() != observer.n_z)
-    {
-        throw std::runtime_error("observation vector has incorrect size");
-    }
 
     // NOTE: Observer needs it's own lambda and weights as it's Z sigma matrix has a unique size and is different from X sigma matrix.
 
@@ -397,25 +367,21 @@ void ukf_t::update(observer_id_t observer_id, const Eigen::VectorXd& z)
     observer.t_xz.noalias() = observer.K * observer.S;
     ukf_t::P.noalias() -= observer.t_xz * observer.K.transpose();
 }
+void ukf_t::new_observation(uint32_t observer_index, double_t observation)
+{
+    // Store observation in the observations map.
+    // NOTE: This adds or replaces the observation at the specified observer index.
+    ukf_t::m_observations[observer_index] = observation;
+}
 
 // ACCESS
-Eigen::MatrixXd& ukf_t::R(observer_id_t observer_id)
-{
-    // Get the observer by ID.
-    auto observer_entry = ukf_t::observers.find(observer_id);
-
-    // Check if the observer was found.
-    if(observer_entry == ukf_t::observers.end())
-    {
-        throw std::runtime_error("observer with specified id does not exist");
-    }
-
-    // Return reference to observer's R.
-    return observer_entry->second.R;
-}
 uint32_t ukf_t::n_variables() const
 {
     return ukf_t::n_x;
+}
+uint32_t ukf_t::n_observers() const
+{
+    return ukf_t::n_z;
 }
 const Eigen::VectorXd& ukf_t::state() const
 {
