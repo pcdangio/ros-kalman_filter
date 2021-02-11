@@ -7,15 +7,13 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
 {
     // Store dimension sizes.
     ukf_t::n_x = n_variables;
-    ukf_t::n_xa = 2*ukf_t::n_x;
-    ukf_t::n_X = 1 + 2*ukf_t::n_xa;
     ukf_t::n_z = n_observers;
-    ukf_t::n_za = ukf_t::n_x + ukf_t::n_z;
-    ukf_t::n_Z = 1 + 2*ukf_t::n_za;
+    ukf_t::n_a = ukf_t::n_x + ukf_t::n_x + ukf_t::n_z;
+    ukf_t::n_s = 1 + 2*ukf_t::n_a;
 
     // Allocate weight vectors.
-    ukf_t::wm.setZero(ukf_t::n_X);
-    ukf_t::wc.setZero(ukf_t::n_X);
+    ukf_t::wm.setZero(ukf_t::n_s);
+    ukf_t::wc.setZero(ukf_t::n_s);
 
     // Allocate prediction components.
     ukf_t::x.setZero(ukf_t::n_x);
@@ -23,12 +21,12 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
     ukf_t::Q.setIdentity(ukf_t::n_x, ukf_t::n_x);
     ukf_t::Xp.setZero(ukf_t::n_x, ukf_t::n_x);
     ukf_t::Xq.setZero(ukf_t::n_x, ukf_t::n_x);
-    ukf_t::X.setZero(ukf_t::n_x, ukf_t::n_X);
+    ukf_t::X.setZero(ukf_t::n_x, ukf_t::n_s);
 
     // Allocate update components.
     ukf_t::R.setIdentity(ukf_t::n_z, ukf_t::n_z);
     ukf_t::Xr.setZero(ukf_t::n_z, ukf_t::n_z);
-    ukf_t::Z.setZero(ukf_t::n_z, ukf_t::n_Z);
+    ukf_t::Z.setZero(ukf_t::n_z, ukf_t::n_s);
     ukf_t::z.setZero(ukf_t::n_z);
     ukf_t::S.setZero(ukf_t::n_z, ukf_t::n_z);
     ukf_t::C.setZero(ukf_t::n_x, ukf_t::n_z);
@@ -74,10 +72,16 @@ void ukf_t::initialize_state(const Eigen::VectorXd& initial_state, const Eigen::
 }
 void ukf_t::iterate()
 {
-    // Calculate lambda and set wm/wc for both the X and Z sigma matrices.
-    double lambda_X, lambda_Z;
-    ukf_t::calculate_scaling(ukf_t::n_xa, lambda_X, ukf_t::wm_X, ukf_t::wc_X);
-    ukf_t::calculate_scaling(ukf_t::n_za, lambda_Z, ukf_t::wm_Z, ukf_t::wc_Z);
+    // Calculate lambda for this iteration (user can change parameters between iterations)
+    double lambda = ukf_t::alpha * ukf_t::alpha * (static_cast<double>(ukf_t::n_a) + ukf_t::kappa) - static_cast<double>(ukf_t::n_a);
+
+    // Calculate weight vectors for mean and covariance averaging.
+    // Set mean recovery weight vector.
+    ukf_t::wm.fill(1.0 / (2.0 * (static_cast<double>(ukf_t::n_a) + lambda)));
+    ukf_t::wm(0) *= 2.0 * lambda;
+    // Copy wc from wm and update first element.
+    ukf_t::wc = ukf_t::wm;
+    ukf_t::wc(0) += (1.0 - ukf_t::alpha*ukf_t::alpha + ukf_t::beta);
 
     // Set up input sigma matrices.
     // NOTE: This implementation segments out the input sigma matrix for efficiency:
@@ -88,11 +92,13 @@ void ukf_t::iterate()
     // y*sqrt(P) stored in Xp
     // y*sqrt(Q) stored in Xq
     // y*sqrt(R) stored in Xr.
-    ukf_t::populate_sigma_component(ukf_t::n_xa, lambda_X, ukf_t::P, ukf_t::Xp);
-    ukf_t::populate_sigma_component(ukf_t::n_xa, lambda_X, ukf_t::Q, ukf_t::Xq);
-    ukf_t::populate_sigma_component(ukf_t::n_za, lambda_Z, ukf_t::R, ukf_t::Xr);
+    ukf_t::populate_sigma_component(ukf_t::n_a, lambda, ukf_t::P, ukf_t::Xp);
+    ukf_t::populate_sigma_component(ukf_t::n_a, lambda, ukf_t::Q, ukf_t::Xq);
+    ukf_t::populate_sigma_component(ukf_t::n_a, lambda, ukf_t::R, ukf_t::Xr);
 
-    // Evaluate X sigma points through transition function.
+
+
+    // Calculate X by passing x, Xp, and Xq through the transition function.
 
     // Pass first set of sigma points, which is just the mean.
     // Populate interface vectors.
@@ -137,7 +143,7 @@ void ukf_t::iterate()
         ukf_t::i_q = ukf_t::Xq.col(j);
         ukf_t::i_x.setZero(ukf_t::n_x);
         // Run transition function.
-        ukf_t::f(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
+        ukf_t::state_transition(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
         // Capture output into X.
         ukf_t::X.col(1 + 2*ukf_t::n_x + j) = ukf_t::i_x;
         
@@ -147,54 +153,65 @@ void ukf_t::iterate()
         ukf_t::i_q = -ukf_t::Xq.col(j);
         ukf_t::i_x.setZero(ukf_t::n_x);
         // Run transition function.
-        ukf_t::f(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
+        ukf_t::state_transition(ukf_t::i_xp, ukf_t::i_q, ukf_t::i_x);
         // Capture output into X.
         ukf_t::X.col(1 + 3*ukf_t::n_x + j) = ukf_t::i_x;
     }
-}
-void ukf_t::calculate_scaling(uint32_t n_a, double_t& lambda, Eigen::VectorXd& wm, Eigen::VectorXd& wc) const
-{
-    // Calculate lambda for this iteration (user can change parameters between iterations)
-    lambda = ukf_t::alpha * ukf_t::alpha * (static_cast<double>(n_a) + ukf_t::kappa) - static_cast<double>(n_a);
 
-    // Calculate weight vectors for mean and covariance averaging.
-    // Set mean recovery weight vector.
-    wm.fill(1.0 / (2.0 * (static_cast<double>(n_a) + lambda)));
-    wm(0) *= 2.0 * lambda;
-    // Copy wc from wm and update first element.
-    wc = wm;
-    wc(0) += (1.0 - ukf_t::alpha*ukf_t::alpha + ukf_t::beta);
-}
-void ukf_t::populate_sigma_component(uint32_t n_a, double_t lambda, const Eigen::MatrixXd& covariance, Eigen::MatrixXd& sigma_component) const
-{
-    // Calculate square root of the covariance matrix using Cholseky Decomposition
-    ukf_t::llt.compute(covariance);
-    // Fill +sqrt(C) block of X.
-    sigma_component = ukf_t::llt.matrixL();
-    // Apply sqrt(n+lambda) to entire matrix.
-    sigma_component *= std::sqrt(static_cast<double>(n_a) + lambda);
-}
-void ukf_t::predict()
-{
-    
 
-    
 
-    
+    // Calculate Z by passing X (x,Xp portion) and Xr.
+    // NOTE: Do this with pure X so nonlinearities of X are passed directly into H(x).
 
-    // Populate Xp and Xq input sigma matrices.
-    
-    
+    // Pass (x,Xp) portion of X through.
+    for(uint32_t j = 0; j < 1 + 2 * ukf_t::n_x; ++j)
+    {
+        // Populate interface vectors.
+        ukf_t::i_x = ukf_t::X.col(j);
+        ukf_t::i_r.setZero(ukf_t::n_z);
+        ukf_t::i_z.setZero(ukf_t::n_z);
+        // Run observation function.
+        ukf_t::observation(ukf_t::i_x, ukf_t::i_r, ukf_t::i_z);
+        // Capture output into Z.
+        ukf_t::Z.col(j) = ukf_t::i_z;
+    }
 
-    
+    // Pass Xr through.
+    for(uint32_t j = 0; j < ukf_t::Xr.cols(); ++j)
+    {
+        // mean PLUS y*sqrt(R)
+        // Populate interface vectors.
+        ukf_t::i_x = ukf_t::X.col(0);
+        ukf_t::i_r = ukf_t::Xr.col(j);
+        ukf_t::i_z.setZero(ukf_t::n_z);
+        // Run observation function.
+        ukf_t::observation(ukf_t::i_x, ukf_t::i_r, ukf_t::i_z);
+        // Capture output into Z.
+        ukf_t::Z.col(1 + 2*ukf_t::n_x + j) = ukf_t::i_z;
+        
+        // mean MINUS y*sqrt(R)
+        // Populate interface vectors.
+        ukf_t::i_x = ukf_t::X.col(0);
+        ukf_t::i_r = -ukf_t::Xr.col(j);
+        ukf_t::i_z.setZero(ukf_t::n_z);
+        // Run observation function.
+        ukf_t::observation(ukf_t::i_x, ukf_t::i_r, ukf_t::i_z);
+        // Capture output into Z.
+        ukf_t::Z.col(1 + 2*ukf_t::n_x + ukf_t::n_z + j) = ukf_t::i_z;
+    }
+
+
 
     // Calculate predicted state mean and covariance.
     
     // Predicted state mean is a weighted average: sum(wm.*X) over all sigma points.
     // Can be calculated via matrix multiplication with wm vector.
-    ukf_t::x.noalias() = ukf_t::X * ukf_t::wm;
+    ukf_t::x.noalias() = ukf_t::X * ukf_t::wm_X;
 
     // Predicted state covariance is a weighted average: sum(wc.*(X-x)(X-x)') over all sigma points.
+    // This can be calculated via matrix multiplication (X-x)wc(X-x)'
+    ukf_t::X.colwise() -= ukf_t::x;
+
     ukf_t::P.setZero();
     for(uint32_t j = 0; j < ukf_t::n_X; ++j)
     {
@@ -206,110 +223,20 @@ void ukf_t::predict()
         ukf_t::t_xx *= ukf_t::wc(j);
         // Sum into predicted state covariance.
         ukf_t::P += ukf_t::t_xx;
-    }
+    } 
+}
+void ukf_t::predict()
+{
+    
+
+    
 }
 void ukf_t::update(observer_id_t observer_id, const Eigen::VectorXd& z)
 {
 
 
-    // NOTE: Observer needs it's own lambda and weights as it's Z sigma matrix has a unique size and is different from X sigma matrix.
 
-    // Calculate lambda for this iteration (user can change parameters between iterations)
-    double lambda = ukf_t::alpha * ukf_t::alpha * (static_cast<double>(observer.n_za) + ukf_t::kappa) - static_cast<double>(observer.n_za);
 
-    // Calculate weight vectors for mean and covariance averaging.
-    // Set mean recovery weight vector.
-    observer.wm.fill(1.0 / (2.0 * (static_cast<double>(observer.n_za) + lambda)));
-    observer.wm(0) *= 2.0 * lambda;
-    // Copy wc from wm and update first element.
-    observer.wc = observer.wm;
-    observer.wc(0) += (1.0 - ukf_t::alpha*ukf_t::alpha + ukf_t::beta);
-
-    // Set up input sigma matrices.
-    // NOTE: This implementation segments out the input sigma matrix for efficiency:
-    // [u u+y*sqrt(P) u-y*sqrt(P) 0           0           0           0          ]
-    // [0 0           0           u+y(sqrt(Q) u-y*sqrt(Q) 0           0          ]
-    // [0 0           0           0           0           u+y*sqrt(R) u-y*sqrt(R)]
-    // u is stored in x
-    // y*sqrt(P) stored in Xp
-    // y*sqrt(Q) not set in update as not used.
-    // y*sqrt(R) stored in Xr
-
-    // Populate Xp and Xr input sigma matrices.
- 
-    // Calculate square root of P using Cholseky Decomposition.
-    ukf_t::llt.compute(ukf_t::P);
-    // Fill +sqrt(P) block of Xp.
-    ukf_t::Xp = ukf_t::llt.matrixL();
-    // Apply sqrt(n+lambda) to entire matrix.
-    ukf_t::Xp *= std::sqrt(static_cast<double>(observer.n_za) + lambda);
-
-    // Calculate square root of R using Cholseky Decomposition.
-    ukf_t::llt.compute(observer.R);
-    // Fill +sqrt(R) block of Xr.
-    observer.Xr = ukf_t::llt.matrixL();
-    // Apply sqrt(n+lambda) to entire matrix.
-    observer.Xr *= std::sqrt(static_cast<double>(observer.n_za) + lambda);
-
-    // Evaluate sigma points through observation function.
-
-    // Pass first set of sigma points, which is just the mean.
-    // Populate interface vectors.
-    ukf_t::i_x = ukf_t::x;
-    observer.i_r.setZero(observer.n_z);
-    observer.i_z.setZero(observer.n_z);
-    // Run observation function.
-    observer.h(ukf_t::i_x, observer.i_r, observer.i_z);
-    // Capture output into Z.
-    observer.Z.col(0) = observer.i_z;
-
-    // Pass second set of sigma points, which focuses on covariance P.
-    for(uint32_t j = 0; j < ukf_t::Xp.cols(); ++j)
-    {
-        // mean PLUS y*sqrt(P)
-        // Populate interface vectors.
-        ukf_t::i_x = ukf_t::x + ukf_t::Xp.col(j);
-        observer.i_r.setZero(observer.n_z);
-        observer.i_z.setZero(observer.n_z);
-        // Run observation function.
-        observer.h(ukf_t::i_x, observer.i_r, observer.i_z);
-        // Capture output into Z.
-        observer.Z.col(1 + j) = observer.i_z;
-        
-        // mean MINUS y*sqrt(P)
-        // Populate interface vectors.
-        ukf_t::i_x = ukf_t::x - ukf_t::Xp.col(j);
-        observer.i_r.setZero(observer.n_z);
-        observer.i_z.setZero(observer.n_z);
-        // Run observation function.
-        observer.h(ukf_t::i_x, observer.i_r, observer.i_z);
-        // Capture output into Z.
-        observer.Z.col(1 + ukf_t::n_x + j) = observer.i_z;
-    }
-
-    // Pass third set of sigma points, which focuses on covariance R.
-    for(uint32_t j = 0; j < observer.Xr.cols(); ++j)
-    {
-        // mean PLUS y*sqrt(R)
-        // Populate interface vectors.
-        ukf_t::i_x = ukf_t::x;
-        observer.i_r = observer.Xr.col(j);
-        observer.i_z.setZero(observer.n_z);
-        // Run observation function.
-        observer.h(ukf_t::i_x, observer.i_r, observer.i_z);
-        // Capture output into Z.
-        observer.Z.col(1 + 2*ukf_t::n_x + j) = observer.i_z;
-        
-        // mean MINUS y*sqrt(Q)
-        // Populate interface vectors.
-        ukf_t::i_x = ukf_t::x;
-        observer.i_r = -observer.Xr.col(j);
-        observer.i_z.setZero(observer.n_z);
-        // Run observation function.
-        observer.h(ukf_t::i_x, observer.i_r, observer.i_z);
-        // Capture output into Z.
-        observer.Z.col(1 + 2*ukf_t::n_x + observer.n_z + j) = observer.i_z;
-    }
 
     // Calculate mean/covariance for predicted observation, as well as cross covariance for predicted state and predicted observation.
     
@@ -324,7 +251,7 @@ void ukf_t::update(observer_id_t observer_id, const Eigen::VectorXd& z)
     for(uint32_t j = 0; j < observer.n_Z; ++j)
     {
         // Calculate X-x at this sigma column.
-        // X is broken down storage-wize into x, +/- Xp, +/-Xr.
+        // X is broken down storage-wize into x, +/- Xp, +/-Xq.
         if(j == 0)
         {
             ukf_t::t_x.setZero();

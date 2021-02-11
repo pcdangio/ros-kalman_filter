@@ -84,26 +84,18 @@ private:
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
     uint32_t n_x;
-    /// \brief The number of elements in the X augmented state.
-    uint32_t n_xa;
-    /// \brief The number of X sigma points.
-    uint32_t n_X;
     /// \brief The number of observers.
     uint32_t n_z;
-    /// \brief The number of elements in the Z augmented state.
-    uint32_t n_za;
-    /// \brief The number of Z sigma points.
-    uint32_t n_Z;
+    /// \brief The number of variables in the augemented state (x q z).
+    uint32_t n_a;
+    /// \brief The number of sigma points.
+    uint32_t n_s;
 
     // STORAGE: WEIGHTS
-    /// \brief The mean recovery weight vector for the X sigma points.
-    Eigen::VectorXd wm_X;
-    /// \brief The covariance recovery weight vector for the X sigma points.
-    Eigen::VectorXd wc_X;
-    /// \brief The mean recovery weight vector for the Z sigma points.
-    Eigen::VectorXd wm_Z;
-    /// \brief The covariance recovery weight vector for the Z sigma points.
-    Eigen::VectorXd wc_Z;
+    /// \brief The mean recovery weight vector.
+    Eigen::VectorXd wm;
+    /// \brief The covariance recovery weight vector.
+    Eigen::VectorXd wc;
 
     // STORAGE: PREDICTION
     /// \brief The variable vector.
