@@ -1,7 +1,5 @@
 #include <kalman_filter/ukf.hpp>
 
-#include <iostream>
-
 using namespace kalman_filter;
 
 // CONSTRUCTORS
