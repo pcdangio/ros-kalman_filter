@@ -5,8 +5,7 @@
 
 #include <eigen3/Eigen/Dense>
 
-#include <functional>
-#include <unordered_map>
+#include <map>
 
 /// \brief Includes objects for Kalman Filtering.
 namespace kalman_filter {
@@ -79,7 +78,7 @@ public:
 private:
     // VARIABLES
     /// \brief Stores the actual observations made between iterations.
-    std::unordered_map<uint32_t, double_t> m_observations;
+    std::map<uint32_t, double_t> m_observations;
     
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
@@ -148,20 +147,6 @@ private:
     // UTILITY
     /// \brief An LLT object for storing results of Cholesky decompositions.
     mutable Eigen::LLT<Eigen::MatrixXd> llt;
-
-    // UTILITY FUNCTIONS
-    /// \brief Calculates scaling parameters.
-    /// \param n_a The number of augmented states.
-    /// \param lambda (OUTPUT) The resulting lambda.
-    /// \param wm (OUTPUT) The resulting mean recovery weight vector.
-    /// \param wc (OUTPUT) The resulting covariance recovery weight vector.
-    void calculate_scaling(uint32_t n_a, double_t& lambda, Eigen::VectorXd& wm, Eigen::VectorXd& wc) const;
-    /// \brief Calculates a particular sigma matrix component.
-    /// \param n_a The number of augmented states.
-    /// \param lambda The lambda to use for the calculation.
-    /// \param covariance The covariance matrix to derive the sigma component from.
-    /// \param sigma_component (OUTPUT) The resulting sigma matrix component.
-    void populate_sigma_component(uint32_t n_a, double_t lambda, const Eigen::MatrixXd& covariance, Eigen::MatrixXd& sigma_component) const;
 };
 
 }
