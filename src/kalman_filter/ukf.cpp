@@ -72,6 +72,7 @@ void ukf_t::initialize_state(const Eigen::VectorXd& initial_state, const Eigen::
 }
 void ukf_t::iterate()
 {
+    // ---------- STEP 1: PREPARATION ----------
     // Calculate lambda for this iteration (user can change parameters between iterations)
     double lambda = ukf_t::alpha * ukf_t::alpha * (static_cast<double>(ukf_t::n_a) + ukf_t::kappa) - static_cast<double>(ukf_t::n_a);
 
@@ -83,6 +84,7 @@ void ukf_t::iterate()
     ukf_t::wc = ukf_t::wm;
     ukf_t::wc(0) += (1.0 - ukf_t::alpha*ukf_t::alpha + ukf_t::beta);
 
+    // ---------- STEP 2: PREDICT ----------
     // Calculate sigma matrix.
     // NOTE: This implementation segments out the input sigma matrix for efficiency:
     // [u u+y*sqrt(P) u-y*sqrt(P) 0           0           0           0          ]
@@ -204,8 +206,6 @@ void ukf_t::iterate()
         ukf_t::X.col(s) = ukf_t::X.col(0);
     }
 
-
-
     // Calculate predicted state mean and covariance.
     
     // Predicted state mean is a weighted average: sum(wm.*X) over all sigma points.
@@ -226,21 +226,15 @@ void ukf_t::iterate()
         ukf_t::P += ukf_t::t_xx;
     } 
 
-
-
-    // UPDATE
-
+    // ---------- STEP 3: UPDATE ----------
     // Get number of observations made.
     uint32_t n_o = ukf_t::m_observations.size();
-
     // Check if any observations have been made.
     if(n_o == 0)
     {
         // No new observations. No need to update.
         return;
     }
-
-
 
     // Calculate Z by passing calculated X and Sr.
 
@@ -283,8 +277,6 @@ void ukf_t::iterate()
         ukf_t::Z.col(s++) = ukf_t::i_z;
     }
 
-
-
     // Calculate predicted observation mean and covariance, as well as cross covariance.
     
     // Predicted observation mean is a weighted average: sum(wm.*Z) over all sigma points.
@@ -310,8 +302,6 @@ void ukf_t::iterate()
         ukf_t::S += ukf_t::t_zz;
         ukf_t::C += ukf_t::t_xz;
     }
-
-
 
     // Calculate inverse of predicted observation covariance.
     ukf_t::t_zz = ukf_t::S.inverse();
