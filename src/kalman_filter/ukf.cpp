@@ -22,6 +22,7 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
     ukf_t::Xp.setZero(ukf_t::n_x, ukf_t::n_x);
     ukf_t::Xq.setZero(ukf_t::n_x, ukf_t::n_x);
     ukf_t::X.setZero(ukf_t::n_x, ukf_t::n_s);
+    ukf_t::dX.setZero(ukf_t::n_x, ukf_t::n_s);
 
     // Allocate update components.
     ukf_t::R.setIdentity(ukf_t::n_z, ukf_t::n_z);
@@ -39,11 +40,9 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
     ukf_t::i_z.setZero(ukf_t::n_z);
 
     // Allocate temporaries.
-    ukf_t::t_x.setZero(ukf_t::n_x);
-    ukf_t::t_xx.setZero(ukf_t::n_x, ukf_t::n_x);
-    ukf_t::t_z.setZero(ukf_t::n_z);
     ukf_t::t_zz.setZero(ukf_t::n_z, ukf_t::n_z);
-    ukf_t::t_xz.setZero(ukf_t::n_x, ukf_t::n_z);
+    ukf_t::t_xs.setZero(ukf_t::n_x, ukf_t::n_s);
+    ukf_t::t_zs.setZero(ukf_t::n_z, ukf_t::n_s);
 
     // Set default parameters.
     ukf_t::alpha = 0.001;
@@ -213,18 +212,10 @@ void ukf_t::iterate()
     ukf_t::x.noalias() = ukf_t::X * ukf_t::wm;
 
     // Predicted state covariance is a weighted average: sum(wc.*(X-x)(X-x)') over all sigma points.
-    ukf_t::P.setZero();
-    for(s = 0; s < ukf_t::n_s; ++s)
-    {
-        // Calculate X-x at this sigma column.
-        ukf_t::t_x = ukf_t::X.col(s) - ukf_t::x;
-        // Calculate outer product.
-        ukf_t::t_xx.noalias() = ukf_t::t_x * ukf_t::t_x.transpose();
-        // Apply weight to outer product.
-        ukf_t::t_xx *= ukf_t::wc(s);
-        // Sum into predicted state covariance.
-        ukf_t::P += ukf_t::t_xx;
-    } 
+    // This can be done more efficiently (speed & code) using (X-x)*wc*(X-x)', where wc is formed into a diagonal matrix.
+    ukf_t::dX = ukf_t::X - ukf_t::x.replicate(1, ukf_t::n_s);
+    ukf_t::t_xs.noalias() = ukf_t::dX * ukf_t::wc.asDiagonal();
+    ukf_t::P.noalias() = ukf_t::t_xs * ukf_t::dX.transpose();
 
     // ---------- STEP 3: UPDATE ----------
     // Get number of observations made.
@@ -284,24 +275,16 @@ void ukf_t::iterate()
     ukf_t::z.noalias() = ukf_t::Z * ukf_t::wm;
 
     // Predicted observation covariance is a weighted average: sum(wc.*(Z-z)(Z-z)') over all sigma points.
-    // Same for predicted state/observation cross covariance: sum(wc.*(X-x)(Z-z)')
-    ukf_t::S.setZero();
-    ukf_t::C.setZero();
-    for(s = 0; s < ukf_t::n_s; ++s)
-    {
-        // Calculate Z-z and X-x at this sigma column.
-        ukf_t::t_z = ukf_t::Z.col(s) - ukf_t::z;
-        ukf_t::t_x = ukf_t::X.col(s) - ukf_t::x;
-        // Calculate outer products.
-        ukf_t::t_zz.noalias() = ukf_t::t_z * ukf_t::t_z.transpose();
-        ukf_t::t_xz.noalias() = ukf_t::t_x * ukf_t::t_z.transpose();
-        // Apply weight to outer products.
-        ukf_t::t_zz *= ukf_t::wc(s);
-        ukf_t::t_xz *= ukf_t::wc(s);
-        // Sum into predicted covariances.
-        ukf_t::S += ukf_t::t_zz;
-        ukf_t::C += ukf_t::t_xz;
-    }
+    // This can be done more efficiently (speed & code) using (Z-z)*wc*(Z-z)', where wc is formed into a diagonal matrix.
+    // Calculate Z-z in place on Z as it's not needed afterwards.
+    ukf_t::Z -= ukf_t::z.replicate(1, ukf_t::n_s);
+    ukf_t::t_zs.noalias() = ukf_t::Z * ukf_t::wc.asDiagonal();
+    ukf_t::S.noalias() = ukf_t::t_zs * ukf_t::Z.transpose();
+
+    // Predicted state/observation cross covariance is a weighted average: sum(wc.*(X-x)(Z-z)') over all sigma points.
+    // This can be done more efficiently (speed & code) using (X-x)*wc*(Z-z)', where wc is formed into a diagonal matrix.
+    // Recall that (X-x)*wc is currently stored in ukf_t::t_xs, and Z-z is stored in Z.
+    ukf_t::C.noalias() = ukf_t::t_xs * ukf_t::Z.transpose();
 
     // Calculate inverse of predicted observation covariance.
     ukf_t::t_zz = ukf_t::S.inverse();

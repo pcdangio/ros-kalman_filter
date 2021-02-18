@@ -107,6 +107,8 @@ private:
     Eigen::MatrixXd Xq;
     /// \brief The evaluated variable sigma matrix.
     Eigen::MatrixXd X;
+    /// \brief The evaluated variable sigma matrix minus it's mean.
+    Eigen::MatrixXd dX;
 
     // STORAGE: UPDATE
     /// \brief The observation noise sigma matrix (positive half).
@@ -133,16 +135,12 @@ private:
     Eigen::VectorXd i_z;
 
     // STORAGE: TEMPORARIES
-    /// \brief A temporary working vector of size x.
-    Eigen::VectorXd t_x;
-    /// \brief A temporary working matrix of size x,x.
-    Eigen::MatrixXd t_xx;
-    /// \brief A temporary working vector of size z.
-    Eigen::VectorXd t_z;
     /// \brief A temporary working matrix of size z,z.
     Eigen::MatrixXd t_zz;
-    /// \brief A temporary working matrix of size x,z.
-    Eigen::MatrixXd t_xz;
+    /// \brief A temporary working matrix of size x,s.
+    Eigen::MatrixXd t_xs;
+    /// \brief A temporary working matrix of size z,s.
+    Eigen::MatrixXd t_zs;
 
     // UTILITY
     /// \brief An LLT object for storing results of Cholesky decompositions.
