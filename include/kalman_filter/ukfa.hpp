@@ -5,7 +5,6 @@
 
 #include <kalman_filter/base.hpp>
 
-/// \brief Includes objects for Kalman Filtering.
 namespace kalman_filter {
 
 /// \brief An Unscented Kalman Filter with augmented state.

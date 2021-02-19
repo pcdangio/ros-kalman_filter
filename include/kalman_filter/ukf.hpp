@@ -1,3 +1,5 @@
+/// \file kalman_filter/ukf.hpp
+/// \brief Defines the kalman_filter::ukf_t class.
 #ifndef KALMAN_FILTER___UKF_H
 #define KALMAN_FILTER___UKF_H
 
@@ -5,10 +7,16 @@
 
 namespace kalman_filter {
 
+/// \brief An Unscented Kalman Filter.
+/// \details A standard UKF can model additive noise only.
 class ukf_t
     :public base_t
 {
 public:
+    // CONSTRUCTORS
+    /// \brief Instantiates a new ukf_t object.
+    /// \param n_variables The number of variables in the state vector.
+    /// \param n_observers The number of state observers.
     ukf_t(uint32_t n_variables, uint32_t n_observers);
 
     // MODEL FUNCTIONS
