@@ -35,8 +35,6 @@ public:
     virtual void observation(const Eigen::VectorXd& x, const Eigen::VectorXd& r, Eigen::VectorXd& z) const = 0;
 
     // FILTER METHODS
-    /// \brief Predicts a new state and performs update corrections with available observations.
-    /// \note The iteration rate should be at least as fast as the fastest observer rate.
     void iterate() override;
 
     // PARAMETERS
