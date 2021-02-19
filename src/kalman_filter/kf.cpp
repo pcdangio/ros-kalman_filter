@@ -43,6 +43,9 @@ void kf_t::iterate()
     // Check if update is necessary.
     if(kf_t::has_observations())
     {
+        // Calculate predicted observation.
+        kf_t::z.noalias() = kf_t::H * kf_t::x;
+        
         // Calculate predicted observation covariance.
         kf_t::t_zx.noalias() = kf_t::H * kf_t::P;
         kf_t::S.noalias() = kf_t::t_zx * kf_t::H.transpose();
