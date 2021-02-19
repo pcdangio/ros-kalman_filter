@@ -53,7 +53,7 @@ public:
     /// \brief The observation noise covariance matrix.
     Eigen::MatrixXd R;
 
-private:
+protected:
     // VARIABLES
     /// \brief Stores the actual observations made between iterations.
     std::map<uint32_t, double_t> m_observations;
