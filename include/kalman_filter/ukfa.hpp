@@ -1,23 +1,24 @@
-/// \file kalman_filter/ukf.hpp
-/// \brief Defines the kalman_filter::ukf_t class.
-#ifndef KALMAN_FILTER___UKF_H
-#define KALMAN_FILTER___UKF_H
+/// \file kalman_filter/ukfa.hpp
+/// \brief Defines the kalman_filter::ukfa_t class.
+#ifndef KALMAN_FILTER___UKFA_H
+#define KALMAN_FILTER___UKFA_H
 
 #include <kalman_filter/base.hpp>
 
 /// \brief Includes objects for Kalman Filtering.
 namespace kalman_filter {
 
-/// \brief An Unscented Kalman Filter.
-class ukf_t
+/// \brief An Unscented Kalman Filter with augmented state.
+/// \details An augmented state UKF can model non-additive noise at the cost of higher computation.
+class ukfa_t
     : public base_t
 {
 public:
     // CONSTRUCTORS
-    /// \brief Instantiates a new ukf_t object.
+    /// \brief Instantiates a new ukfa_t object.
     /// \param n_variables The number of variables in the state vector.
     /// \param n_observers The number of state observers.
-    ukf_t(uint32_t n_variables, uint32_t n_observers);
+    ukfa_t(uint32_t n_variables, uint32_t n_observers);
 
     // MODEL FUNCTIONS
     /// \brief Predicts a new state by transitioning from a prior state.

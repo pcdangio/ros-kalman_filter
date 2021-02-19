@@ -14,7 +14,7 @@ find_package(Eigen3 REQUIRED)
 # Set up catkin package.
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES ${PROJECT_NAME}_ukf
+  LIBRARIES ${PROJECT_NAME}_ukfa
   CATKIN_DEPENDS roscpp
   DEPENDS EIGEN3
 )
@@ -25,13 +25,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS})
 
-# Build UKF library.
-add_library(${PROJECT_NAME}_ukf
+# Build UKFA library.
+add_library(${PROJECT_NAME}_ukfa
   src/kalman_filter/base.cpp
-  src/kalman_filter/ukf.cpp)
+  src/kalman_filter/ukfa.cpp)
 
-# Install UKF library.
-install(TARGETS ${PROJECT_NAME}_ukf
+# Install UKFA library.
+install(TARGETS ${PROJECT_NAME}_ukfa
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 install(DIRECTORY include/${PROJECT_NAME}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
