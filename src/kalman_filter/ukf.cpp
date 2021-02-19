@@ -23,7 +23,6 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
     ukf_t::i_z.setZero(ukf_t::n_z);
 
     // Allocate temporaries.
-    ukf_t::t_zz.setZero(ukf_t::n_z, ukf_t::n_z);
     ukf_t::t_xs.setZero(ukf_t::n_x, ukf_t::n_s);
     ukf_t::t_zs.setZero(ukf_t::n_z, ukf_t::n_s);
 
@@ -93,12 +92,10 @@ void ukf_t::iterate()
 
     // ---------- STEP 3: UPDATE ----------
 
-    // Get number of observations made.
-    uint32_t n_o = ukf_t::m_observations.size();
-    // Check if any observations have been made.
-    if(n_o == 0)
+    // Check if update is necessary.
+    if(!ukf_t::has_observations())
     {
-        // No new observations. No need to update.
+        // No new observations. Skip update.
         return;
     }
 
@@ -147,49 +144,6 @@ void ukf_t::iterate()
     ukf_t::t_xs.noalias() = ukf_t::X * ukf_t::wc.asDiagonal();
     ukf_t::C.noalias() = ukf_t::t_xs * ukf_t::Z.transpose();
 
-    // Calculate inverse of predicted observation covariance.
-    ukf_t::t_zz = ukf_t::S.inverse();
-
-    // Using number of observations, create masked versions of S and S_i.
-    Eigen::MatrixXd S_m(n_o, n_o);
-    Eigen::MatrixXd Si_m(ukf_t::n_z, n_o);
-    // Iterate over z indices.
-    uint32_t m_i = 0;
-    uint32_t m_j = 0;
-    // Iterate column first.
-    for(auto j = ukf_t::m_observations.begin(); j != ukf_t::m_observations.end(); ++j)
-    {
-        // Iterate over rows to populate O_m.
-        for(auto i = ukf_t::m_observations.begin(); i != ukf_t::m_observations.end(); ++i)
-        {
-            // Copy the selected O element into O_m.
-            S_m(m_i++, m_j) = ukf_t::S(i->first, j->first);
-        }
-        m_i = 0;
-
-        // Copy the selected Oi column into Oi_m.
-        Si_m.col(m_j++) = ukf_t::t_zz.col(j->first);
-    }
-    
-    // Calculate Kalman gain (masked by n observations).
-    Eigen::MatrixXd K_m(ukf_t::n_x,n_o);
-    K_m.noalias() = ukf_t::C * Si_m;
-
-    // Create masked version of za-z.
-    Eigen::VectorXd zd_m(n_o);
-    m_i = 0;
-    for(auto observation = ukf_t::m_observations.begin(); observation != ukf_t::m_observations.end(); ++observation)
-    {
-        zd_m(m_i++) = observation->second - ukf_t::z(observation->first);
-    }
-
-    // Update state.
-    ukf_t::x.noalias() += K_m * zd_m;
-
-    // Update covariance.
-    // NOTE: Just use internal temporary since it's masked size.
-    ukf_t::P.noalias() -= K_m * S_m * K_m.transpose();
-
-    // Reset observations.
-    ukf_t::m_observations.clear();
+    // Run masked Kalman update.
+    ukf_t::masked_kalman_update();
 }

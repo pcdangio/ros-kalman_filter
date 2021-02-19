@@ -54,9 +54,6 @@ public:
     Eigen::MatrixXd R;
 
 protected:
-    // VARIABLES
-    /// \brief Stores the actual observations made between iterations.
-    std::map<uint32_t, double_t> m_observations;
     
     // DIMENSIONS
     /// \brief The number of variables being estimated by the system.
@@ -70,12 +67,30 @@ protected:
     /// \brief The variable covariance matrix.
     Eigen::MatrixXd P;
 
+    // STORAGE: UPDATE
     /// \brief The predicted observation vector.
     Eigen::VectorXd z;
     /// \brief The predicted observation covariance.
     Eigen::MatrixXd S;
     /// \brief The innovation cross covariance.
     Eigen::MatrixXd C;
+
+    // STORAGE: TEMPORARIES
+    /// \brief A temporary of size n_z,n_z.
+    Eigen::MatrixXd t_zz;
+
+    // METHODS
+    /// \brief Indicates if any observations have been made since the last iteration.
+    /// \returns TRUE if new observations exist, otherwise FALSE.
+    bool has_observations() const;
+    /// \brief Performs a Kalman update masked by available observations.
+    /// \details S and C must be calculated first.
+    void masked_kalman_update();
+
+private:
+    // VARIABLES
+    /// \brief Stores the actual observations made between iterations.
+    std::map<uint32_t, double_t> m_observations;
 };
 
 }

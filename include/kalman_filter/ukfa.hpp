@@ -5,11 +5,10 @@
 
 #include <kalman_filter/base.hpp>
 
-/// \brief Includes objects for Kalman Filtering.
 namespace kalman_filter {
 
-/// \brief An Unscented Kalman Filter with augmented state.
-/// \details An augmented state UKF can model non-additive noise at the cost of higher computation.
+/// \brief An Unscented Kalman Filter with Augmented state (UKFA).
+/// \details The UKFA can perform nonlinear state estimation with additive AND multiplicative noise.
 class ukfa_t
     : public base_t
 {
@@ -87,8 +86,6 @@ private:
     Eigen::VectorXd i_z;
 
     // STORAGE: TEMPORARIES
-    /// \brief A temporary working matrix of size z,z.
-    Eigen::MatrixXd t_zz;
     /// \brief A temporary working matrix of size x,s.
     Eigen::MatrixXd t_xs;
     /// \brief A temporary working matrix of size z,s.
