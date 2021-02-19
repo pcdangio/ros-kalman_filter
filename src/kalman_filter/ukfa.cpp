@@ -285,7 +285,7 @@ void ukfa_t::iterate()
     }
     
     // Calculate Kalman gain (masked by n observations).
-    Eigen::MatrixXd K_m(n_x,n_o);
+    Eigen::MatrixXd K_m(ukfa_t::n_x,n_o);
     K_m.noalias() = ukfa_t::C * Si_m;
 
     // Create masked version of za-z.
