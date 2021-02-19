@@ -1,3 +1,5 @@
+/// \file kalman_filter/base.hpp
+/// \brief Defines the kalman_filter::base_t class.
 #ifndef KALMAN_FILTER___BASE_H
 #define KALMAN_FILTER___BASE_H
 
@@ -5,8 +7,10 @@
 
 #include <map>
 
+/// \brief Contains objects for Kalman Filtering.
 namespace kalman_filter {
 
+/// \brief Provides base functionality for all Kalman Filter object types.
 class base_t
 {
 public:
