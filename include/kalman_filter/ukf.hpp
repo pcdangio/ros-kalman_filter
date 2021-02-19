@@ -7,8 +7,8 @@
 
 namespace kalman_filter {
 
-/// \brief An Unscented Kalman Filter.
-/// \details A standard UKF can model additive noise only.
+/// \brief An Unscented Kalman Filter (UKF)
+/// \details The UKF can perform nonlinear state estimation with additive noise.
 class ukf_t
     :public base_t
 {
@@ -68,8 +68,6 @@ private:
     Eigen::VectorXd i_z;
 
     // STORAGE: TEMPORARIES
-    /// \brief A temporary working matrix of size z,z.
-    Eigen::MatrixXd t_zz;
     /// \brief A temporary working matrix of size x,s.
     Eigen::MatrixXd t_xs;
     /// \brief A temporary working matrix of size z,s.
