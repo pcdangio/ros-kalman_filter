@@ -27,6 +27,7 @@ include_directories(
 
 # Build UKF library.
 add_library(${PROJECT_NAME}_ukf
+  src/kalman_filter/base.cpp
   src/kalman_filter/ukf.cpp)
 
 # Install UKF library.

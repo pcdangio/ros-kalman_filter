@@ -3,15 +3,14 @@
 #ifndef KALMAN_FILTER___UKF_H
 #define KALMAN_FILTER___UKF_H
 
-#include <eigen3/Eigen/Dense>
-
-#include <map>
+#include <kalman_filter/base.hpp>
 
 /// \brief Includes objects for Kalman Filtering.
 namespace kalman_filter {
 
 /// \brief An Unscented Kalman Filter.
 class ukf_t
+    : public base_t
 {
 public:
     // CONSTRUCTORS
@@ -35,37 +34,9 @@ public:
     virtual void observation(const Eigen::VectorXd& x, const Eigen::VectorXd& r, Eigen::VectorXd& z) const = 0;
 
     // FILTER METHODS
-    /// \brief Initializes the UKF with a specified state and covariance.
-    /// \param initial_state The initial state vector to initialize with.
-    /// \param initial_covariance The initial state covariance to initialize with.
-    void initialize_state(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);
     /// \brief Predicts a new state and performs update corrections with available observations.
     /// \note The iteration rate should be at least as fast as the fastest observer rate.
-    void iterate();
-    /// \brief Adds a new observation to the filter.
-    /// \param observer_index The index of the observer that made the observation.
-    /// \param observation The value of the observation.
-    void new_observation(uint32_t observer_index, double_t observation);
-
-    // ACCESS
-    /// \brief Gets the number of variables in the state vector.
-    /// \returns The number of variables.
-    uint32_t n_variables() const;
-    /// \brief Gets the number of observers.
-    /// \returns The number of observers.
-    uint32_t n_observers() const;
-    /// \brief Gets the current state vector.
-    /// \returns A const reference to the current state vector.
-    const Eigen::VectorXd& state() const;
-    /// \brief Gets the current state covariance matrix.
-    /// \returns A const reference to the current state covariance matrix.
-    const Eigen::MatrixXd& covariance() const;
-
-    // COVARIANCES
-    /// \brief The process noise covariance matrix.
-    Eigen::MatrixXd Q;
-    /// \brief The observation noise covariance matrix.
-    Eigen::MatrixXd R;
+    void iterate() override;
 
     // PARAMETERS
     /// \brief The alpha parameter of the UKF.
@@ -75,16 +46,8 @@ public:
     /// \brief The beta parameter of the UKF.
     double_t beta;
 
-private:
-    // VARIABLES
-    /// \brief Stores the actual observations made between iterations.
-    std::map<uint32_t, double_t> m_observations;
-    
+private:   
     // DIMENSIONS
-    /// \brief The number of variables being estimated by the system.
-    uint32_t n_x;
-    /// \brief The number of observers.
-    uint32_t n_z;
     /// \brief The number of variables in the augemented state (x q z).
     uint32_t n_a;
     /// \brief The number of sigma points.
@@ -97,10 +60,6 @@ private:
     Eigen::VectorXd wc;
 
     // STORAGE: PREDICTION
-    /// \brief The variable vector.
-    Eigen::VectorXd x;
-    /// \brief The variable covariance matrix.
-    Eigen::MatrixXd P;
     /// \brief The variable covariance sigma matrix (positive half).
     Eigen::MatrixXd Xp;
     /// \brief The process noise sigma matrix (positive half).
@@ -115,12 +74,6 @@ private:
     Eigen::MatrixXd Xr;
     /// \brief The evaluated observation sigma matrix.
     Eigen::MatrixXd Z;
-    /// \brief The predicted observation vector.
-    Eigen::VectorXd z;
-    /// \brief The predicted observation covariance.
-    Eigen::MatrixXd S;
-    /// \brief The innovation cross covariance.
-    Eigen::MatrixXd C;
 
     // STORAGE: INTERFACES
     /// \brief An interface to the prior state vector.

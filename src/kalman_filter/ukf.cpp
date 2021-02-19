@@ -4,10 +4,9 @@ using namespace kalman_filter;
 
 // CONSTRUCTORS
 ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
+    : base_t(n_variables, n_observers)
 {
-    // Store dimension sizes.
-    ukf_t::n_x = n_variables;
-    ukf_t::n_z = n_observers;
+    // Store augmented dimension sizes.
     ukf_t::n_a = ukf_t::n_x + ukf_t::n_x + ukf_t::n_z;
     ukf_t::n_s = 1 + 2*ukf_t::n_a;
 
@@ -16,21 +15,14 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
     ukf_t::wc.setZero(ukf_t::n_s);
 
     // Allocate prediction components.
-    ukf_t::x.setZero(ukf_t::n_x);
-    ukf_t::P.setIdentity(ukf_t::n_x, ukf_t::n_x);
-    ukf_t::Q.setIdentity(ukf_t::n_x, ukf_t::n_x);
     ukf_t::Xp.setZero(ukf_t::n_x, ukf_t::n_x);
     ukf_t::Xq.setZero(ukf_t::n_x, ukf_t::n_x);
     ukf_t::X.setZero(ukf_t::n_x, ukf_t::n_s);
     ukf_t::dX.setZero(ukf_t::n_x, ukf_t::n_s);
 
     // Allocate update components.
-    ukf_t::R.setIdentity(ukf_t::n_z, ukf_t::n_z);
     ukf_t::Xr.setZero(ukf_t::n_z, ukf_t::n_z);
     ukf_t::Z.setZero(ukf_t::n_z, ukf_t::n_s);
-    ukf_t::z.setZero(ukf_t::n_z);
-    ukf_t::S.setZero(ukf_t::n_z, ukf_t::n_z);
-    ukf_t::C.setZero(ukf_t::n_x, ukf_t::n_z);
 
     // Allocate interface components.
     ukf_t::i_xp.setZero(ukf_t::n_x);
@@ -51,24 +43,6 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
 }
 
 // FILTER METHODS
-void ukf_t::initialize_state(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance)
-{
-    // Verify initial state size.
-    if(initial_state.size() != ukf_t::n_x)
-    {
-        throw std::runtime_error("failed to initialize state vector (initial state provided has incorrect size)");
-    }
-
-    // Verify initial covariance size.
-    if(initial_covariance.rows() != ukf_t::n_x || initial_covariance.cols() != ukf_t::n_x)
-    {
-        throw std::runtime_error("failed to initialize state covariance (initial covariance provided has incorrect size)");
-    }
-
-    // Copy initial state and covariance.
-    ukf_t::x = initial_state;
-    ukf_t::P = initial_covariance;
-}
 void ukf_t::iterate()
 {
     // ---------- STEP 1: PREPARATION ----------
@@ -331,28 +305,4 @@ void ukf_t::iterate()
 
     // Reset observations.
     ukf_t::m_observations.clear();
-}
-void ukf_t::new_observation(uint32_t observer_index, double_t observation)
-{
-    // Store observation in the observations map.
-    // NOTE: This adds or replaces the observation at the specified observer index.
-    ukf_t::m_observations[observer_index] = observation;
-}
-
-// ACCESS
-uint32_t ukf_t::n_variables() const
-{
-    return ukf_t::n_x;
-}
-uint32_t ukf_t::n_observers() const
-{
-    return ukf_t::n_z;
-}
-const Eigen::VectorXd& ukf_t::state() const
-{
-    return ukf_t::x;
-}
-const Eigen::MatrixXd& ukf_t::covariance() const
-{
-    return ukf_t::P;
 }
