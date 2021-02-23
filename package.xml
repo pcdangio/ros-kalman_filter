@@ -10,7 +10,6 @@
   <maintainer email="pcdangio@gmail.com">Paul D'Angio</maintainer>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>roscpp</depend>
   <build_depend>EIGEN3</build_depend>
   <doc_depend>doxygen</doc_depend>
 
