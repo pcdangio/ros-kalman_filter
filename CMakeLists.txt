@@ -11,7 +11,6 @@ find_package(Eigen3 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}_kf ${PROJECT_NAME}_ukf ${PROJECT_NAME}_ukfa
-  CATKIN_DEPENDS roscpp
   DEPENDS EIGEN3)
 
 # Set up include directories.
