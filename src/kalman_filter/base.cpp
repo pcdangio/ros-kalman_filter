@@ -128,3 +128,12 @@ const Eigen::MatrixXd& base_t::covariance() const
 {
     return base_t::P;
 }
+void base_t::modify_state(uint32_t index, double_t value)
+{
+    if(index >= base_t::n_x)
+    {
+        throw std::runtime_error("failed to modify state (state index out of range)");
+    }
+    
+    base_t::x(index) = value;
+}

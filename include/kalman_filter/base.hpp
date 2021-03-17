@@ -46,6 +46,12 @@ public:
     /// \brief Gets the current state covariance matrix.
     /// \returns A const reference to the current state covariance matrix.
     const Eigen::MatrixXd& covariance() const;
+    /// \brief Externally modifies a variable in the state.
+    /// \param index The index of the state variable to modify..
+    /// \details Under most circumstances, this function should not be used as it
+    /// permits changing the calculated state outside of the Kalman Filter. Special
+    /// cases do, however, exist. An example is normalizing a quaternion in the state.
+    void modify_state(uint32_t index, double_t value);
 
     // COVARIANCES
     /// \brief The process noise covariance matrix.
