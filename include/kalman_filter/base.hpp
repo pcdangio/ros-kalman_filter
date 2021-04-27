@@ -59,6 +59,14 @@ public:
     /// \brief The observation noise covariance matrix.
     Eigen::MatrixXd R;
 
+    // LOGGING
+    /// \brief Opens up a log file and begins logging data.
+    /// \param log_file The file to log to.
+    /// \returns TRUE if the logging successfully started, otherwise FALSE.
+    bool start_log(const std::string& log_file);
+    /// \brief Stops logging.
+    void stop_log();
+
 protected:
     
     // DIMENSIONS
@@ -97,6 +105,9 @@ private:
     // VARIABLES
     /// \brief Stores the actual observations made between iterations.
     std::map<uint32_t, double_t> m_observations;
+
+    // LOGGING
+    std::ofstream* m_log_file;
 };
 
 }
