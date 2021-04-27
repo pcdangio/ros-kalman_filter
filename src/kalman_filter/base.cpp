@@ -146,17 +146,15 @@ bool base_t::start_log(const std::string& log_file)
     // Stop any existing log.
     base_t::stop_log();
 
-    // Create a new log stream.
-    base_t::m_log_file = std::make_unique<std::ofstream>();
-
     // Open the file for writing.
-    base_t::m_log_file->open(log_file.c_str());
+    base_t::m_log_file.open(log_file.c_str());
 
     // Verify that the file opened correctly.
-    if(base_t::m_log_file->fail())
+    if(base_t::m_log_file.fail())
     {
-        // Reset the log file pointer.
-        base_t::m_log_file.reset();
+        // Close the stream and clear flags.
+        base_t::m_log_file.close();
+        base_t::m_log_file.clear();
 
         return false;
     }
@@ -166,10 +164,10 @@ bool base_t::start_log(const std::string& log_file)
 void base_t::stop_log()
 {
     // Check if a log is running.
-    if(base_t::m_log_file)
+    if(base_t::m_log_file.is_open())
     {
-        // Close and reset the log file pointer.
-        base_t::m_log_file->close();
-        base_t::m_log_file.reset();
+        // Close the stream and reset flags.
+        base_t::m_log_file.close();
+        base_t::m_log_file.clear();
     }
 }
