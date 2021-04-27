@@ -147,7 +147,7 @@ bool base_t::start_log(const std::string& log_file)
     base_t::stop_log();
 
     // Create a new log stream.
-    base_t::m_log_file = new std::ofstream();
+    base_t::m_log_file = std::make_unique<std::ofstream>();
 
     // Open the file for writing.
     base_t::m_log_file->open(log_file.c_str());
@@ -156,8 +156,7 @@ bool base_t::start_log(const std::string& log_file)
     if(base_t::m_log_file->fail())
     {
         // Reset the log file pointer.
-        delete base_t::m_log_file;
-        base_t::m_log_file = nullptr;
+        base_t::m_log_file.reset();
 
         return false;
     }
@@ -171,7 +170,6 @@ void base_t::stop_log()
     {
         // Close and reset the log file pointer.
         base_t::m_log_file->close();
-        delete base_t::m_log_file;
-        base_t::m_log_file = nullptr;
+        base_t::m_log_file.reset();
     }
 }

@@ -6,6 +6,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include <map>
+#include <memory>
 
 /// \brief Contains objects for Kalman Filtering.
 namespace kalman_filter {
@@ -107,7 +108,8 @@ private:
     std::map<uint32_t, double_t> m_observations;
 
     // LOGGING
-    std::ofstream* m_log_file;
+    /// \brief The log file instance.
+    std::unique_ptr<std::ofstream> m_log_file;
 };
 
 }
