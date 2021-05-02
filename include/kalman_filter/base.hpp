@@ -101,6 +101,9 @@ protected:
     /// \brief Performs a Kalman update masked by available observations.
     /// \details S and C must be calculated first.
     void masked_kalman_update();
+    void log_predicted_state();
+    void log_observations(bool empty = false);
+    void log_estimated_state();
 
 private:
     // VARIABLES
