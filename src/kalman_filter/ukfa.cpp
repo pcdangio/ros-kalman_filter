@@ -190,74 +190,85 @@ void ukfa_t::iterate()
     ukfa_t::t_xs.noalias() = ukfa_t::dX * ukfa_t::wc.asDiagonal();
     ukfa_t::P.noalias() = ukfa_t::t_xs * ukfa_t::dX.transpose();
 
+    // Log predicted state.
+    ukfa_t::log_predicted_state();
+
     // ---------- STEP 3: UPDATE ----------
     
     // Check if update is necessary.
-    if(!ukfa_t::has_observations())
+    if(ukfa_t::has_observations())
     {
-        // No new observations. Skip update.
-        return;
+        // Calculate Z by passing calculated X and Sr.
+
+        // Pass the x/Xp/Xq portion of X through.
+        for(s = 0; s < 1 + 4 * ukfa_t::n_x; ++s)
+        {
+            // Populate interface vectors.
+            ukfa_t::i_x = ukfa_t::X.col(s);
+            ukfa_t::i_r.setZero(ukfa_t::n_z);
+            ukfa_t::i_z.setZero(ukfa_t::n_z);
+            // Run observation function.
+            observation(ukfa_t::i_x, ukfa_t::i_r, ukfa_t::i_z);
+            // Capture output into Z.
+            ukfa_t::Z.col(s) = ukfa_t::i_z;
+        }
+
+        // Pass Sr through on top of the back of X.
+        for(uint32_t j = 0; j < ukfa_t::n_z; ++j)
+        {
+            // mean PLUS y*sqrt(R)
+            // Populate interface vectors.
+            ukfa_t::i_x = ukfa_t::X.col(s);
+            ukfa_t::i_r = ukfa_t::Xr.col(j);
+            ukfa_t::i_z.setZero(ukfa_t::n_z);
+            // Run observation function.
+            observation(ukfa_t::i_x, ukfa_t::i_r, ukfa_t::i_z);
+            // Capture output into Z.
+            ukfa_t::Z.col(s++) = ukfa_t::i_z;
+        }
+        for(uint32_t j = 0; j < ukfa_t::n_z; ++j)
+        {
+            // mean MINUS y*sqrt(R)
+            // Populate interface vectors.
+            ukfa_t::i_x = ukfa_t::X.col(s);
+            ukfa_t::i_r = -ukfa_t::Xr.col(j);
+            ukfa_t::i_z.setZero(ukfa_t::n_z);
+            // Run observation function.
+            observation(ukfa_t::i_x, ukfa_t::i_r, ukfa_t::i_z);
+            // Capture output into Z.
+            ukfa_t::Z.col(s++) = ukfa_t::i_z;
+        }
+
+        // Calculate predicted observation mean and covariance, as well as cross covariance.
+        
+        // Predicted observation mean is a weighted average: sum(wm.*Z) over all sigma points.
+        // Can be calculated via matrix multiplication with wm vector.
+        ukfa_t::z.noalias() = ukfa_t::Z * ukfa_t::wm;
+
+        // Log observations.
+        ukfa_t::log_observations();
+
+        // Predicted observation covariance is a weighted average: sum(wc.*(Z-z)(Z-z)') over all sigma points.
+        // This can be done more efficiently (speed & code) using (Z-z)*wc*(Z-z)', where wc is formed into a diagonal matrix.
+        // Calculate Z-z in place on Z as it's not needed afterwards.
+        ukfa_t::Z -= ukfa_t::z.replicate(1, ukfa_t::n_s);
+        ukfa_t::t_zs.noalias() = ukfa_t::Z * ukfa_t::wc.asDiagonal();
+        ukfa_t::S.noalias() = ukfa_t::t_zs * ukfa_t::Z.transpose();
+
+        // Predicted state/observation cross covariance is a weighted average: sum(wc.*(X-x)(Z-z)') over all sigma points.
+        // This can be done more efficiently (speed & code) using (X-x)*wc*(Z-z)', where wc is formed into a diagonal matrix.
+        // Recall that (X-x)*wc is currently stored in ukfa_t::t_xs, and Z-z is stored in Z.
+        ukfa_t::C.noalias() = ukfa_t::t_xs * ukfa_t::Z.transpose();
+
+        // Run masked Kalman update.
+        ukfa_t::masked_kalman_update();
+    }
+    else
+    {
+        // Log empty observations.
+        ukfa_t::log_observations(true);
     }
 
-    // Calculate Z by passing calculated X and Sr.
-
-    // Pass the x/Xp/Xq portion of X through.
-    for(s = 0; s < 1 + 4 * ukfa_t::n_x; ++s)
-    {
-        // Populate interface vectors.
-        ukfa_t::i_x = ukfa_t::X.col(s);
-        ukfa_t::i_r.setZero(ukfa_t::n_z);
-        ukfa_t::i_z.setZero(ukfa_t::n_z);
-        // Run observation function.
-        observation(ukfa_t::i_x, ukfa_t::i_r, ukfa_t::i_z);
-        // Capture output into Z.
-        ukfa_t::Z.col(s) = ukfa_t::i_z;
-    }
-
-    // Pass Sr through on top of the back of X.
-    for(uint32_t j = 0; j < ukfa_t::n_z; ++j)
-    {
-        // mean PLUS y*sqrt(R)
-        // Populate interface vectors.
-        ukfa_t::i_x = ukfa_t::X.col(s);
-        ukfa_t::i_r = ukfa_t::Xr.col(j);
-        ukfa_t::i_z.setZero(ukfa_t::n_z);
-        // Run observation function.
-        observation(ukfa_t::i_x, ukfa_t::i_r, ukfa_t::i_z);
-        // Capture output into Z.
-        ukfa_t::Z.col(s++) = ukfa_t::i_z;
-    }
-    for(uint32_t j = 0; j < ukfa_t::n_z; ++j)
-    {
-        // mean MINUS y*sqrt(R)
-        // Populate interface vectors.
-        ukfa_t::i_x = ukfa_t::X.col(s);
-        ukfa_t::i_r = -ukfa_t::Xr.col(j);
-        ukfa_t::i_z.setZero(ukfa_t::n_z);
-        // Run observation function.
-        observation(ukfa_t::i_x, ukfa_t::i_r, ukfa_t::i_z);
-        // Capture output into Z.
-        ukfa_t::Z.col(s++) = ukfa_t::i_z;
-    }
-
-    // Calculate predicted observation mean and covariance, as well as cross covariance.
-    
-    // Predicted observation mean is a weighted average: sum(wm.*Z) over all sigma points.
-    // Can be calculated via matrix multiplication with wm vector.
-    ukfa_t::z.noalias() = ukfa_t::Z * ukfa_t::wm;
-
-    // Predicted observation covariance is a weighted average: sum(wc.*(Z-z)(Z-z)') over all sigma points.
-    // This can be done more efficiently (speed & code) using (Z-z)*wc*(Z-z)', where wc is formed into a diagonal matrix.
-    // Calculate Z-z in place on Z as it's not needed afterwards.
-    ukfa_t::Z -= ukfa_t::z.replicate(1, ukfa_t::n_s);
-    ukfa_t::t_zs.noalias() = ukfa_t::Z * ukfa_t::wc.asDiagonal();
-    ukfa_t::S.noalias() = ukfa_t::t_zs * ukfa_t::Z.transpose();
-
-    // Predicted state/observation cross covariance is a weighted average: sum(wc.*(X-x)(Z-z)') over all sigma points.
-    // This can be done more efficiently (speed & code) using (X-x)*wc*(Z-z)', where wc is formed into a diagonal matrix.
-    // Recall that (X-x)*wc is currently stored in ukfa_t::t_xs, and Z-z is stored in Z.
-    ukfa_t::C.noalias() = ukfa_t::t_xs * ukfa_t::Z.transpose();
-
-    // Run masked Kalman update.
-    ukfa_t::masked_kalman_update();
+    // Log estimated state.
+    ukfa_t::log_estimated_state();    
 }

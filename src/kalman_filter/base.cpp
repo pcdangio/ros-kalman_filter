@@ -1,5 +1,7 @@
 #include <kalman_filter/base.hpp>
 
+#include <fstream>
+
 using namespace kalman_filter;
 
 // CONSTRUCTORS
@@ -136,4 +138,115 @@ void base_t::modify_state(uint32_t index, double_t value)
     }
     
     base_t::x(index) = value;
+}
+
+// LOGGING
+bool base_t::start_log(const std::string& log_file)
+{
+    // Stop any existing log.
+    base_t::stop_log();
+
+    // Open the file for writing.
+    base_t::m_log_file.open(log_file.c_str());
+
+    // Verify that the file opened correctly.
+    if(base_t::m_log_file.fail())
+    {
+        // Close the stream and clear flags.
+        base_t::m_log_file.close();
+        base_t::m_log_file.clear();
+
+        return false;
+    }
+
+    // Write the header line.
+    for(uint32_t i = 0; i < base_t::n_x; ++i)
+    {
+        base_t::m_log_file << "xp_" << i << ",";
+    }
+    for(uint32_t i = 0; i < base_t::n_z; ++i)
+    {
+        base_t::m_log_file << "zp_" << i << ",";
+    }
+    for(uint32_t i = 0; i < base_t::n_z; ++i)
+    {
+        base_t::m_log_file << "za_" << i << ",";
+    }
+    for(uint32_t i = 0; i < base_t::n_x; ++i)
+    {
+        base_t::m_log_file << "xe_" << i;
+        if(i + 1 < base_t::n_x)
+        {
+            base_t::m_log_file << ",";
+        }
+    }
+    base_t::m_log_file << std::endl;
+
+    return true;
+}
+void base_t::stop_log()
+{
+    // Check if a log is running.
+    if(base_t::m_log_file.is_open())
+    {
+        // Close the stream and reset flags.
+        base_t::m_log_file.close();
+        base_t::m_log_file.clear();
+    }
+}
+void base_t::log_predicted_state()
+{
+    if(base_t::m_log_file.is_open())
+    {
+        for(uint32_t i = 0; i < base_t::n_x; ++i)
+        {
+            base_t::m_log_file << base_t::x(i) << ",";
+        }
+    }
+}
+void base_t::log_observations(bool empty)
+{
+    if(base_t::m_log_file.is_open())
+    {
+        if(empty)
+        {
+            for(uint32_t i = 0; i < 2*base_t::n_z; ++i)
+            {
+                base_t::m_log_file << ",";
+            }
+        }
+        else
+        {
+            // Predicted observations.
+            for(uint32_t i = 0; i < base_t::n_z; ++i)
+            {
+                base_t::m_log_file << base_t::z(i) << ",";
+            }
+            // Actual observations.
+            for(uint32_t i = 0; i < base_t::n_z; ++i)
+            {
+                auto observation = base_t::m_observations.find(i);
+                if(observation != base_t::m_observations.end())
+                {
+                    base_t::m_log_file << observation->second;
+                }
+                base_t::m_log_file << ",";
+            }
+        }
+    }
+}
+void base_t::log_estimated_state()
+{
+    if(base_t::m_log_file.is_open())
+    {
+        for(uint32_t i = 0; i < base_t::n_x; ++i)
+        {
+            base_t::m_log_file << base_t::x(i);
+            if(i + 1 < base_t::n_x)
+            {
+                base_t::m_log_file << ",";
+            }
+        }
+        base_t::m_log_file << std::endl;
+    }
 }

@@ -6,6 +6,7 @@
 #include <eigen3/Eigen/Dense>
 
 #include <map>
+#include <fstream>
 
 /// \brief Contains objects for Kalman Filtering.
 namespace kalman_filter {
@@ -59,6 +60,14 @@ public:
     /// \brief The observation noise covariance matrix.
     Eigen::MatrixXd R;
 
+    // LOGGING
+    /// \brief Opens up a log file and begins logging data.
+    /// \param log_file The file to log to.
+    /// \returns TRUE if the logging successfully started, otherwise FALSE.
+    bool start_log(const std::string& log_file);
+    /// \brief Stops logging.
+    void stop_log();
+
 protected:
     
     // DIMENSIONS
@@ -92,11 +101,18 @@ protected:
     /// \brief Performs a Kalman update masked by available observations.
     /// \details S and C must be calculated first.
     void masked_kalman_update();
+    void log_predicted_state();
+    void log_observations(bool empty = false);
+    void log_estimated_state();
 
 private:
     // VARIABLES
     /// \brief Stores the actual observations made between iterations.
     std::map<uint32_t, double_t> m_observations;
+
+    // LOGGING
+    /// \brief The log file instance.
+    std::ofstream m_log_file;
 };
 
 }

@@ -33,6 +33,9 @@ void kf_t::iterate()
     kf_t::x.noalias() = kf_t::B * kf_t::u;
     kf_t::x += kf_t::t_x;
 
+    // Log predicted state.
+    kf_t::log_predicted_state();
+
     // Predict covariance.
     kf_t::t_xx.noalias() = kf_t::A * kf_t::P;
     kf_t::P.noalias() = kf_t::t_xx * kf_t::A.transpose();
@@ -45,6 +48,9 @@ void kf_t::iterate()
     {
         // Calculate predicted observation.
         kf_t::z.noalias() = kf_t::H * kf_t::x;
+
+        // Log observations.
+        kf_t::log_observations();
         
         // Calculate predicted observation covariance.
         kf_t::t_zx.noalias() = kf_t::H * kf_t::P;
@@ -57,6 +63,14 @@ void kf_t::iterate()
         // Perform masked kalman update.
         kf_t::masked_kalman_update();
     }
+    else
+    {
+        // Log empty observations.
+        kf_t::log_observations(true);
+    }
+
+    // Log estimated state.
+    kf_t::log_estimated_state();
 }
 void kf_t::new_input(uint32_t input_index, double_t input)
 {
