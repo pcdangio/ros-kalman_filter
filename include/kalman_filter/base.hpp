@@ -101,8 +101,12 @@ protected:
     /// \brief Performs a Kalman update masked by available observations.
     /// \details S and C must be calculated first.
     void masked_kalman_update();
+    /// \brief Writes the predicted state to the log file.
     void log_predicted_state();
+    /// \brief Writes observations to the log file.
+    /// \param empty Indicates if there are no observations available.
     void log_observations(bool empty = false);
+    /// \brief Writes the estimated state to the log file.
     void log_estimated_state();
 
 private:
