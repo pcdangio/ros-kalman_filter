@@ -61,6 +61,10 @@ bool base_t::has_observations() const
 {
     return !base_t::m_observations.empty();
 }
+bool base_t::has_observation(uint32_t observer_index) const
+{
+    return base_t::m_observations.count(observer_index) != 0;
+}
 void base_t::masked_kalman_update()
 {
     // Get number of observations.

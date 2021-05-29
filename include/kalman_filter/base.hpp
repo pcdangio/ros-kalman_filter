@@ -33,6 +33,10 @@ public:
     /// \param observer_index The index of the observer that made the observation.
     /// \param observation The value of the observation.
     void new_observation(uint32_t observer_index, double_t observation);
+    /// \brief Indicates if a new observation is available.
+    /// \param observer_index The index of the observer to check for a new observation.
+    /// \returns TRUE if a new observation is available, otherwise FALSE.
+    bool has_observation(uint32_t observer_index) const;
 
     // ACCESS
     /// \brief Gets the number of variables in the state vector.
