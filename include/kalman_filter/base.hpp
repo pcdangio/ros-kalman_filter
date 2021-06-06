@@ -20,6 +20,7 @@ public:
     /// \param n_variables The number of variables in the state vector.
     /// \param n_observers The number of state observers.
     base_t(uint32_t n_variables, uint32_t n_observers);
+    ~base_t();
 
     // FILTER METHODS
     /// \brief Initializes the UKF with a specified state and covariance.
