@@ -56,7 +56,7 @@ void ukf_t::iterate()
     // Check if calculation succeeded (positive semi definite)
     if(ukf_t::llt.info() != Eigen::ComputationInfo::Success)
     {
-        throw std::runtime_error("covariance matrix P is not positive semi definite");
+        throw std::runtime_error("covariance matrix P is not positive semi definite (predict)");
     }
     // Reset first column of X.
     ukf_t::X.col(0).setZero();
@@ -104,7 +104,7 @@ void ukf_t::iterate()
         // Check if calculation succeeded (positive semi definite)
         if(ukf_t::llt.info() != Eigen::ComputationInfo::Success)
         {
-            throw std::runtime_error("covariance matrix P is not positive semi definite");
+            throw std::runtime_error("covariance matrix P is not positive semi definite (update)");
         }
         // Reset first column of X.
         ukf_t::X.col(0).setZero();
