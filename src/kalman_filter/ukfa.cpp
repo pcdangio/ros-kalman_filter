@@ -37,7 +37,7 @@ ukfa_t::ukfa_t(uint32_t n_variables, uint32_t n_observers)
 
     // Set default parameters.
     ukfa_t::alpha = 0.001;
-    ukfa_t::kappa = 3 - ukfa_t::n_x;
+    ukfa_t::kappa = 3.0 - static_cast<double>(ukfa_t::n_x);
     ukfa_t::beta = 2;
 }
 
@@ -68,6 +68,12 @@ void ukfa_t::iterate()
     // y*sqrt(R) stored in Xr.
 
     // Calculate square root of P using Cholseky Decomposition
+    // Protect calculation by ensuring positive semi-definite.
+    // NOTE: P is fully recalculated later.
+    for(uint32_t n = 0; n < ukfa_t::n_x; ++n)
+    {
+        ukfa_t::P(n, n) = std::max(0.001, ukfa_t::P(n,n));
+    }
     ukfa_t::llt.compute(ukfa_t::P);
     // Check if calculation succeeded (positive semi definite)
     if(ukfa_t::llt.info() != Eigen::ComputationInfo::Success)

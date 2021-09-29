@@ -28,7 +28,7 @@ ukf_t::ukf_t(uint32_t n_variables, uint32_t n_observers)
 
     // Set default parameters.
     ukf_t::alpha = 0.001;
-    ukf_t::kappa = 3 - ukf_t::n_x;
+    ukf_t::kappa = 3.0 - static_cast<double_t>(ukf_t::n_x);
     ukf_t::beta = 2;
 }
 
@@ -52,6 +52,12 @@ void ukf_t::iterate()
 
     // Populate previous state sigma matrix
     // Calculate square root of P using Cholseky Decomposition
+    // Protect calculation by ensuring positive semi-definite.
+    // NOTE: P is fully recalculated later.
+    for(uint32_t n = 0; n < ukf_t::n_x; ++n)
+    {
+        ukf_t::P(n, n) = std::max(0.001, ukf_t::P(n,n));
+    }
     ukf_t::llt.compute(ukf_t::P);
     // Check if calculation succeeded (positive semi definite)
     if(ukf_t::llt.info() != Eigen::ComputationInfo::Success)
