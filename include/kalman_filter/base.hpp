@@ -23,10 +23,6 @@ public:
     ~base_t();
 
     // FILTER METHODS
-    /// \brief Initializes the UKF with a specified state and covariance.
-    /// \param initial_state The initial state vector to initialize with.
-    /// \param initial_covariance The initial state covariance to initialize with.
-    void initialize_state(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance);
     /// \brief Predicts a new state and performs update corrections with available observations.
     /// \note The iteration rate should be at least as fast as the fastest observer rate.
     virtual void iterate() = 0;
@@ -46,18 +42,24 @@ public:
     /// \brief Gets the number of observers.
     /// \returns The number of observers.
     uint32_t n_observers() const;
-    /// \brief Gets the current state vector.
-    /// \returns A const reference to the current state vector.
-    const Eigen::VectorXd& state() const;
-    /// \brief Gets the current state covariance matrix.
-    /// \returns A const reference to the current state covariance matrix.
-    const Eigen::MatrixXd& covariance() const;
-    /// \brief Externally modifies a variable in the state.
-    /// \param index The index of the state variable to modify..
-    /// \details Under most circumstances, this function should not be used as it
-    /// permits changing the calculated state outside of the Kalman Filter. Special
-    /// cases do, however, exist. An example is normalizing a quaternion in the state.
-    void modify_state(uint32_t index, double_t value);
+    /// \brief Gets the current value of a state variable.
+    /// \param index The index of the variable to get.
+    /// \returns The current value of the state variable.
+    double_t state(uint32_t index) const;
+    /// \brief Sets the value of a state variable.
+    /// \param index The index of the variable to set.
+    /// \param value The value to assign to the variable.
+    void set_state(uint32_t index, double_t value);
+    /// \brief Gets the current covariance between two predicted state variables.
+    /// \param index_a The index of the first predicted state.
+    /// \param index_b The index of the second predicted state.
+    /// \returns The covariance between the two predicted states.
+    double_t covariance(uint32_t index_a, uint32_t index_b) const;
+    /// \brief Sets the covariance between two predicted state variables.
+    /// \param index_a The index of the first predicted state.
+    /// \param index_b The index of the second predicted state.
+    /// \param value The value to assign to the covariance.
+    void set_covariance(uint32_t index_a, uint32_t index_b, double_t value);
 
     // COVARIANCES
     /// \brief The process noise covariance matrix.

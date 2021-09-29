@@ -32,24 +32,6 @@ base_t::~base_t()
 }
 
 // FILTER METHODS
-void base_t::initialize_state(const Eigen::VectorXd& initial_state, const Eigen::MatrixXd& initial_covariance)
-{
-    // Verify initial state size.
-    if(initial_state.size() != base_t::n_x)
-    {
-        throw std::runtime_error("failed to initialize state vector (initial state provided has incorrect size)");
-    }
-
-    // Verify initial covariance size.
-    if(initial_covariance.rows() != base_t::n_x || initial_covariance.cols() != base_t::n_x)
-    {
-        throw std::runtime_error("failed to initialize state covariance (initial covariance provided has incorrect size)");
-    }
-
-    // Copy initial state and covariance.
-    base_t::x = initial_state;
-    base_t::P = initial_covariance;
-}
 void base_t::new_observation(uint32_t observer_index, double_t observation)
 {
     // Verify index exists.
@@ -131,22 +113,45 @@ uint32_t base_t::n_observers() const
 {
     return base_t::n_z;
 }
-const Eigen::VectorXd& base_t::state() const
+double_t base_t::state(uint32_t index) const
 {
-    return base_t::x;
-}
-const Eigen::MatrixXd& base_t::covariance() const
-{
-    return base_t::P;
-}
-void base_t::modify_state(uint32_t index, double_t value)
-{
+    // Check if index is valid.
     if(index >= base_t::n_x)
     {
-        throw std::runtime_error("failed to modify state (state index out of range)");
+        throw std::runtime_error("invalid state variable index");
     }
-    
+
+    return base_t::x(index);
+}
+void base_t::set_state(uint32_t index, double_t value)
+{
+    // Check if index is valid.
+    if(index >= base_t::n_x)
+    {
+        throw std::runtime_error("invalid state variable index");
+    }
+
     base_t::x(index) = value;
+}
+double_t base_t::covariance(uint32_t index_a, uint32_t index_b) const
+{
+    // Check if indices is valid.
+    if(index_a >= base_t::n_x || index_b >= base_t::n_x)
+    {
+        throw std::runtime_error("invalid state variable index");
+    }
+
+    return base_t::P(index_a, index_b);
+}
+void base_t::set_covariance(uint32_t index_a, uint32_t index_b, double_t value)
+{
+    // Check if indices is valid.
+    if(index_a >= base_t::n_x || index_b >= base_t::n_x)
+    {
+        throw std::runtime_error("invalid state variable index");
+    }
+
+    base_t::P(index_a, index_b) = value;
 }
 
 // LOGGING
