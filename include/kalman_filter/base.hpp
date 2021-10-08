@@ -42,22 +42,22 @@ public:
     /// \brief Gets the number of observers.
     /// \returns The number of observers.
     uint32_t n_observers() const;
-    /// \brief Gets the current value of a state variable.
+    /// \brief Gets the current estimated value of a state variable.
     /// \param index The index of the variable to get.
-    /// \returns The current value of the state variable.
+    /// \returns The current estimated value of the state variable.
     double_t state(uint32_t index) const;
-    /// \brief Sets the value of a state variable.
+    /// \brief Sets the value of an estimated state variable.
     /// \param index The index of the variable to set.
     /// \param value The value to assign to the variable.
     void set_state(uint32_t index, double_t value);
-    /// \brief Gets the current covariance between two predicted state variables.
-    /// \param index_a The index of the first predicted state.
-    /// \param index_b The index of the second predicted state.
-    /// \returns The covariance between the two predicted states.
+    /// \brief Gets the current covariance between two estimated state variables.
+    /// \param index_a The index of the first estimated state.
+    /// \param index_b The index of the second estimated state.
+    /// \returns The covariance between the two estimated states.
     double_t covariance(uint32_t index_a, uint32_t index_b) const;
-    /// \brief Sets the covariance between two predicted state variables.
-    /// \param index_a The index of the first predicted state.
-    /// \param index_b The index of the second predicted state.
+    /// \brief Sets the covariance between two estimated state variables.
+    /// \param index_a The index of the first estimated state.
+    /// \param index_b The index of the second estimated state.
     /// \param value The value to assign to the covariance.
     void set_covariance(uint32_t index_a, uint32_t index_b, double_t value);
 

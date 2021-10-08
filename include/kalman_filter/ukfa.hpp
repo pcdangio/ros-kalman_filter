@@ -96,10 +96,9 @@ private:
     mutable Eigen::LLT<Eigen::MatrixXd> llt;
 
     // Hide base class protected members.
+    // NOTE: State variable and covariance access is still protected.
     using base_t::n_x;
     using base_t::n_z;
-    using base_t::x;
-    using base_t::P;
     using base_t::z;
     using base_t::S;
     using base_t::C;
