@@ -69,15 +69,15 @@ void base_t::masked_kalman_update()
     // Iterate column first.
     for(auto j = base_t::m_observations.begin(); j != base_t::m_observations.end(); ++j)
     {
-        // Iterate over rows to populate O_m.
+        // Iterate over rows to populate S_m.
         for(auto i = base_t::m_observations.begin(); i != base_t::m_observations.end(); ++i)
         {
-            // Copy the selected O element into O_m.
+            // Copy the selected S element into S_m.
             S_m(m_i++, m_j) = base_t::S(i->first, j->first);
         }
         m_i = 0;
 
-        // Copy the selected Oi column into Oi_m.
+        // Copy the selected Si column into Si_m.
         Si_m.col(m_j++) = base_t::t_zz.col(j->first);
     }
     
