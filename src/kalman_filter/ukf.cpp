@@ -52,27 +52,6 @@ void ukf_t::iterate()
 
     // Populate previous state sigma matrix
     // Calculate square root of P using Cholseky Decomposition
-    // Protect calculation by ensuring positive semi-definite.
-    // NOTE: P is fully recalculated later.
-    for(uint32_t i = 0; i < ukf_t::n_x; ++i)
-    {
-        for(uint32_t j = 0; j < ukf_t::n_x; ++j)
-        {
-            if(i==j)
-            {
-                // Ensure non-negligible positive variance.
-                ukf_t::P(i,j) = std::max(0.001, ukf_t::P(i,j));
-            }
-            else
-            {
-                // Mitigate round-off error for very small covariances.
-                if(std::abs(ukf_t::P(i,j)) < 1e-5)
-                {
-                    ukf_t::P(i,j) = 0.0;
-                }
-            }
-        }
-    }
     ukf_t::llt.compute(ukf_t::P);
     // Check if calculation succeeded (positive semi definite)
     if(ukf_t::llt.info() != Eigen::ComputationInfo::Success)
