@@ -23,6 +23,7 @@ base_t::base_t(uint32_t n_variables, uint32_t n_observers)
     base_t::C.setZero(base_t::n_x, base_t::n_z);
 
     // Allocate temporaries.
+    base_t::t_xx.setZero(base_t::n_x, base_t::n_x);
     base_t::t_zz.setZero(base_t::n_z, base_t::n_z);
 }
 base_t::~base_t()
@@ -99,6 +100,37 @@ void base_t::masked_kalman_update()
     // Update covariance.
     // NOTE: Just use internal temporary since it's masked size.
     base_t::P.noalias() -= K_m * S_m * K_m.transpose();
+
+    // Protect against non-positive definite covariance matrices.
+    // Force symmetric matrix.
+    base_t::t_xx = base_t::P.transpose();
+    base_t::P += base_t::t_xx;
+    base_t::P /= 2.0;
+    // Force full rank and clean out small numbers.
+    for(uint32_t i = 0; i < base_t::n_x; ++i)
+    {
+        double_t row_sum = 0;
+        // Force symmetry of non-diagonals.
+        for(uint32_t j = 0; j < base_t::n_x; ++j)
+        {
+            if(i!=j)
+            {
+                if(base_t::P(i,j) < 1E-3)
+                {
+                    base_t::P(i,j) = 0.0;
+                }
+                else
+                {
+                    row_sum += std::abs(base_t::P(i,j));
+                }
+            }
+        }
+        // Force PSD by controlling diagonal.
+        if(base_t::P(i,i) <= row_sum)
+        {
+            base_t::P(i,i) = row_sum + 1E-3;
+        }
+    }
 
     // Reset observations.
     base_t::m_observations.clear();
