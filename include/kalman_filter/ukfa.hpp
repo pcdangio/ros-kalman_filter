@@ -37,12 +37,9 @@ public:
     void iterate() override;
 
     // PARAMETERS
-    /// \brief The alpha parameter of the UKF.
-    double_t alpha;
-    /// \brief The kappa parameter of the UKF.
-    double_t kappa;
-    /// \brief The beta parameter of the UKF.
-    double_t beta;
+    /// \brief Controls sigma point spread from the mean (-1 < wo < 1)
+    /// \details wo < 0 gives points closer to the mean, wo > 0 gives points further from the mean.
+    double_t wo;
 
 private:   
     // DIMENSIONS
@@ -52,10 +49,8 @@ private:
     uint32_t n_s;
 
     // STORAGE: WEIGHTS
-    /// \brief The mean recovery weight vector.
-    Eigen::VectorXd wm;
-    /// \brief The covariance recovery weight vector.
-    Eigen::VectorXd wc;
+    /// \brief The mean/covariance recovery weight vector.
+    Eigen::VectorXd wj;
 
     // STORAGE: PREDICTION
     /// \brief The variable covariance sigma matrix (positive half).

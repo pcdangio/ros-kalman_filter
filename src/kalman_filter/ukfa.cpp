@@ -10,9 +10,8 @@ ukfa_t::ukfa_t(uint32_t n_variables, uint32_t n_observers)
     ukfa_t::n_a = ukfa_t::n_x + ukfa_t::n_x + ukfa_t::n_z;
     ukfa_t::n_s = 1 + 2*ukfa_t::n_a;
 
-    // Allocate weight vectors.
-    ukfa_t::wm.setZero(ukfa_t::n_s);
-    ukfa_t::wc.setZero(ukfa_t::n_s);
+    // Allocate weight vector.
+    ukfa_t::wj.setZero(ukfa_t::n_s);
 
     // Allocate prediction components.
     ukfa_t::Xp.setZero(ukfa_t::n_x, ukfa_t::n_x);
@@ -36,27 +35,20 @@ ukfa_t::ukfa_t(uint32_t n_variables, uint32_t n_observers)
     ukfa_t::t_zs.setZero(ukfa_t::n_z, ukfa_t::n_s);
 
     // Set default parameters.
-    ukfa_t::alpha = 0.001;
-    ukfa_t::kappa = 3.0 - static_cast<double>(ukfa_t::n_x);
-    ukfa_t::beta = 2;
+    ukfa_t::wo = 0.1;
 }
 
 // FILTER METHODS
 void ukfa_t::iterate()
 {
     // ---------- STEP 1: PREPARATION ----------
-    // Calculate lambda for this iteration (user can change parameters between iterations)
-    double lambda = ukfa_t::alpha * ukfa_t::alpha * (static_cast<double>(ukfa_t::n_a) + ukfa_t::kappa) - static_cast<double>(ukfa_t::n_a);
 
-    // Calculate weight vectors for mean and covariance averaging.
-    // Set mean recovery weight vector.
-    ukfa_t::wm.fill(1.0 / (2.0 * (static_cast<double>(ukfa_t::n_a) + lambda)));
-    ukfa_t::wm(0) *= 2.0 * lambda;
-    // Copy wc from wm and update first element.
-    ukfa_t::wc = ukfa_t::wm;
-    ukfa_t::wc(0) += (1.0 - ukfa_t::alpha*ukfa_t::alpha + ukfa_t::beta);
+    // Calculate weight vector for mean and covariance averaging.
+    ukfa_t::wj.fill((1.0 - ukfa_t::wo)/(2.0 * static_cast<double>(ukfa_t::n_x)));
+    ukfa_t::wj[0] = ukfa_t::wo;
 
     // ---------- STEP 2: PREDICT ----------
+
     // Calculate sigma matrix.
     // NOTE: This implementation segments out the input sigma matrix for efficiency:
     // [u u+y*sqrt(P) u-y*sqrt(P) 0           0           0           0          ]
@@ -77,7 +69,7 @@ void ukfa_t::iterate()
     // Fill +sqrt(P) block of Xp.
     ukfa_t::Xp = ukfa_t::llt.matrixL();
     // Apply sqrt(n+lambda) to entire matrix.
-    ukfa_t::Xp *= std::sqrt(static_cast<double>(ukfa_t::n_a) + lambda);
+    ukfa_t::Xp *= std::sqrt(static_cast<double>(ukfa_t::n_x) / (1.0 - ukfa_t::wo));
 
     // Calculate square root of Q using Cholseky Decomposition.
     ukfa_t::llt.compute(ukfa_t::Q);
@@ -89,7 +81,7 @@ void ukfa_t::iterate()
     // Fill +sqrt(Q) block of Xq.
     ukfa_t::Xq = ukfa_t::llt.matrixL();
     // Apply sqrt(n+lambda) to entire matrix.
-    ukfa_t::Xq *= std::sqrt(static_cast<double>(ukfa_t::n_a) + lambda);
+    ukfa_t::Xq *= std::sqrt(static_cast<double>(ukfa_t::n_x) / (1.0 - ukfa_t::wo));
 
     // Calculate square root of R using Cholseky Decomposition.
     ukfa_t::llt.compute(ukfa_t::R);
@@ -101,7 +93,7 @@ void ukfa_t::iterate()
     // Fill +sqrt(R) block of Xr.
     ukfa_t::Xr = ukfa_t::llt.matrixL();
     // Apply sqrt(n+lambda) to entire matrix.
-    ukfa_t::Xr *= std::sqrt(static_cast<double>(ukfa_t::n_a) + lambda);
+    ukfa_t::Xr *= std::sqrt(static_cast<double>(ukfa_t::n_x) / (1.0 - ukfa_t::wo));
 
     // Calculate X by passing sigma points through the transition function.
 
@@ -182,12 +174,12 @@ void ukfa_t::iterate()
     
     // Predicted state mean is a weighted average: sum(wm.*X) over all sigma points.
     // Can be calculated via matrix multiplication with wm vector.
-    ukfa_t::x.noalias() = ukfa_t::X * ukfa_t::wm;
+    ukfa_t::x.noalias() = ukfa_t::X * ukfa_t::wj;
 
     // Predicted state covariance is a weighted average: sum(wc.*(X-x)(X-x)') over all sigma points.
     // This can be done more efficiently (speed & code) using (X-x)*wc*(X-x)', where wc is formed into a diagonal matrix.
     ukfa_t::dX = ukfa_t::X - ukfa_t::x.replicate(1, ukfa_t::n_s);
-    ukfa_t::t_xs.noalias() = ukfa_t::dX * ukfa_t::wc.asDiagonal();
+    ukfa_t::t_xs.noalias() = ukfa_t::dX * ukfa_t::wj.asDiagonal();
     ukfa_t::P.noalias() = ukfa_t::t_xs * ukfa_t::dX.transpose();
 
     // Log predicted state.
@@ -243,7 +235,7 @@ void ukfa_t::iterate()
         
         // Predicted observation mean is a weighted average: sum(wm.*Z) over all sigma points.
         // Can be calculated via matrix multiplication with wm vector.
-        ukfa_t::z.noalias() = ukfa_t::Z * ukfa_t::wm;
+        ukfa_t::z.noalias() = ukfa_t::Z * ukfa_t::wj;
 
         // Log observations.
         ukfa_t::log_observations();
@@ -252,7 +244,7 @@ void ukfa_t::iterate()
         // This can be done more efficiently (speed & code) using (Z-z)*wc*(Z-z)', where wc is formed into a diagonal matrix.
         // Calculate Z-z in place on Z as it's not needed afterwards.
         ukfa_t::Z -= ukfa_t::z.replicate(1, ukfa_t::n_s);
-        ukfa_t::t_zs.noalias() = ukfa_t::Z * ukfa_t::wc.asDiagonal();
+        ukfa_t::t_zs.noalias() = ukfa_t::Z * ukfa_t::wj.asDiagonal();
         ukfa_t::S.noalias() = ukfa_t::t_zs * ukfa_t::Z.transpose();
 
         // Predicted state/observation cross covariance is a weighted average: sum(wc.*(X-x)(Z-z)') over all sigma points.
