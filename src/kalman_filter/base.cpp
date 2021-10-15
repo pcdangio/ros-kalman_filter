@@ -58,12 +58,9 @@ void base_t::masked_kalman_update()
     // Get number of observations.
     uint32_t n_o = base_t::m_observations.size();
 
-    // Calculate inverse of predicted observation covariance.
-    base_t::t_zz = base_t::S.inverse();
-
-    // Using number of observations, create masked versions of S and S_i.
+    // Using number of observations, create masked versions of S and C.
     Eigen::MatrixXd S_m(n_o, n_o);
-    Eigen::MatrixXd Si_m(base_t::n_z, n_o);
+    Eigen::MatrixXd C_m(base_t::n_x, n_o);
     // Iterate over z indices.
     uint32_t m_i = 0;
     uint32_t m_j = 0;
@@ -78,13 +75,16 @@ void base_t::masked_kalman_update()
         }
         m_i = 0;
 
-        // Copy the selected Si column into Si_m.
-        Si_m.col(m_j++) = base_t::t_zz.col(j->first);
+        // Copy the selected C column into C_m.
+        C_m.col(m_j++) = base_t::C.col(j->first);
     }
+
+    // Calculate inverse of masked S.
+    Eigen::MatrixXd Si_m = S_m.inverse();
     
     // Calculate Kalman gain (masked by n observations).
     Eigen::MatrixXd K_m(base_t::n_x,n_o);
-    K_m.noalias() = base_t::C * Si_m;
+    K_m.noalias() = C_m * Si_m;
 
     // Create masked version of za-z.
     Eigen::VectorXd zd_m(n_o);
