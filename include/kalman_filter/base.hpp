@@ -70,8 +70,9 @@ public:
     // LOGGING
     /// \brief Opens up a log file and begins logging data.
     /// \param log_file The file to log to.
+    /// \param precision The precision to write numbers with. DEFAULT = 6
     /// \returns TRUE if the logging successfully started, otherwise FALSE.
-    bool start_log(const std::string& log_file);
+    bool start_log(const std::string& log_file, uint8_t precision = 6);
     /// \brief Stops logging.
     void stop_log();
 

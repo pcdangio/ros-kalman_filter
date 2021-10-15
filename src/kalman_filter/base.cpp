@@ -1,6 +1,7 @@
 #include <kalman_filter/base.hpp>
 
 #include <fstream>
+#include <iomanip>
 
 using namespace kalman_filter;
 
@@ -186,7 +187,7 @@ void base_t::set_covariance(uint32_t index_a, uint32_t index_b, double_t value)
 }
 
 // LOGGING
-bool base_t::start_log(const std::string& log_file)
+bool base_t::start_log(const std::string& log_file, uint8_t precision)
 {
     // Stop any existing log.
     base_t::stop_log();
@@ -203,6 +204,9 @@ bool base_t::start_log(const std::string& log_file)
 
         return false;
     }
+
+    // Set precision output for the file.
+    base_t::m_log_file << std::fixed << std::setprecision(precision);
 
     // Write the header line.
     for(uint32_t i = 0; i < base_t::n_x; ++i)
