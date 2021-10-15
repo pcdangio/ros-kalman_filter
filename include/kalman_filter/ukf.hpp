@@ -79,7 +79,7 @@ private:
     using base_t::z;
     using base_t::S;
     using base_t::C;
-    using base_t::t_zz;
+    using base_t::t_xx;
     using base_t::has_observations;
     using base_t::masked_kalman_update;
 };

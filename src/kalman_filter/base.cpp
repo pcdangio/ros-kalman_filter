@@ -24,7 +24,6 @@ base_t::base_t(uint32_t n_variables, uint32_t n_observers)
 
     // Allocate temporaries.
     base_t::t_xx.setZero(base_t::n_x, base_t::n_x);
-    base_t::t_zz.setZero(base_t::n_z, base_t::n_z);
 }
 base_t::~base_t()
 {

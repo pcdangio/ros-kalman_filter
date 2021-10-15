@@ -100,8 +100,6 @@ protected:
     // STORAGE: TEMPORARIES
     /// \brief A temporary of size n_x,n_x.
     Eigen::MatrixXd t_xx;
-    /// \brief A temporary of size n_z,n_z.
-    Eigen::MatrixXd t_zz;
 
     // METHODS
     /// \brief Indicates if any observations have been made since the last iteration.

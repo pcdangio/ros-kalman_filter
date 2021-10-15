@@ -49,8 +49,6 @@ private:
     // STORAGE: TEMPORARIES
     /// \brief A temporary vector of size n_x.
     Eigen::VectorXd t_x;
-    /// \brief A temporary matrix of size n_x,n_x.
-    Eigen::MatrixXd t_xx;
     /// \brief A temporary matrix of size n_z,n_x.
     Eigen::MatrixXd t_zx;
 
@@ -61,7 +59,7 @@ private:
     using base_t::z;
     using base_t::S;
     using base_t::C;
-    using base_t::t_zz;
+    using base_t::t_xx;
     using base_t::has_observations;
     using base_t::masked_kalman_update;
 };
